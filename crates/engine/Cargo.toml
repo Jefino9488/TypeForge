@@ -1,0 +1,21 @@
+[package]
+name = "typeforge-engine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+typeforge-protocol = { path = "../protocol" }
+rusqlite = "0.31.0"
+symspell = "0.5.2"
+tracing = "0.1.40"
+flate2 = "1.0.30"
+csv = "1.3.0"
+arc-swap = "1.7.1"
+
+[dev-dependencies]
+uuid = { version = "1.8.0", features = ["v4"] }
+criterion = "0.5.1"
+
+[[bench]]
+name = "predict_benchmark"
+harness = false

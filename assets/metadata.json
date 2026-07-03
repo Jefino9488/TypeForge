@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "language": "en",
+  "source": "norvig_1w",
+  "format": "csv.gz",
+  "files": [
+    "dictionary-v1.csv.gz"
+  ]
+}
