@@ -9,6 +9,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/engine/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/protocol/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/adapters/fcitx5/rust_bridge/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/client/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

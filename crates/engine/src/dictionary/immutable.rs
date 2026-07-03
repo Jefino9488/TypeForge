@@ -1,9 +1,9 @@
 use crate::traits::{Dictionary, Predictor};
-use typeforge_protocol::{Prediction, PredictionSource};
+use flate2::read::GzDecoder;
 use std::collections::HashMap;
 use std::error::Error;
-use flate2::read::GzDecoder;
 use std::fs::File;
+use typeforge_protocol::{Prediction, PredictionSource};
 
 pub struct ImmutableDictionary {
     path: String,
@@ -25,16 +25,18 @@ impl Dictionary for ImmutableDictionary {
     fn load(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let file = File::open(&self.path)?;
         let decoder = GzDecoder::new(file);
-        let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(decoder);
-        
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(decoder);
+
         for result in rdr.records() {
             let record = result?;
-            if let (Some(word), Some(freq_str)) = (record.get(0), record.get(1)) {
-                if let Ok(freq) = freq_str.parse::<i64>() {
-                    let w = word.to_string();
-                    self.words.push(w.clone());
-                    self.frequencies.insert(w, freq);
-                }
+            if let (Some(word), Some(freq_str)) = (record.get(0), record.get(1))
+                && let Ok(freq) = freq_str.parse::<i64>()
+            {
+                let w = word.to_string();
+                self.words.push(w.clone());
+                self.frequencies.insert(w, freq);
             }
         }
         self.words.sort();
@@ -63,7 +65,7 @@ impl Predictor for ImmutableDictionary {
                     score,
                     source: PredictionSource::Dictionary,
                 });
-                
+
                 if results.len() >= limit * 10 {
                     break;
                 }

@@ -15,15 +15,15 @@ impl Database {
             )",
             [],
         )?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     pub fn load_all(&self) -> SqlResult<Vec<(String, i64)>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT word, frequency FROM learned_words")?;
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?))
-        })?;
+        let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
 
         let mut results = Vec::new();
         for row in rows {
@@ -42,4 +42,3 @@ impl Database {
         Ok(())
     }
 }
-

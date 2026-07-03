@@ -1,0 +1,4 @@
+# Hashes of file build rules.
+93af67148cf937b7ca62d26c740dce8a CMakeFiles/typeforge-im.conf.in-fmt
+def42c1ccef7ee9321909221dd5d2ccf typeforge-im.conf
+7b6ee1455a3aafdee2b3126e2ce09821 typeforge.conf

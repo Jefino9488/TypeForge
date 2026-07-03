@@ -1,6 +1,5 @@
 pub mod config {
     use directories::ProjectDirs;
-    use std::path::PathBuf;
 
     pub fn get_socket_path() -> String {
         "/tmp/typeforge.sock".to_string() // Hardcoded for MVP, in future use XDG_RUNTIME_DIR
@@ -12,7 +11,10 @@ pub mod config {
             if !data_dir.exists() {
                 let _ = std::fs::create_dir_all(data_dir);
             }
-            return data_dir.join("typeforge_learned.db").to_string_lossy().to_string();
+            return data_dir
+                .join("typeforge_learned.db")
+                .to_string_lossy()
+                .to_string();
         }
         "typeforge_learned.db".to_string()
     }

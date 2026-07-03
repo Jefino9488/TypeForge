@@ -4,6 +4,7 @@ members = [
     "crates/common",
     "crates/engine",
     "crates/daemon",
-    "crates/cli"
-]
+    "crates/cli",
+    "adapters/fcitx5/rust_bridge"
+, "crates/client"]
 resolver = "2"

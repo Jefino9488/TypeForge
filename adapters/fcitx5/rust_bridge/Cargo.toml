@@ -1,0 +1,13 @@
+[package]
+name = "typeforge-fcitx5-bridge"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "typeforge_fcitx5_bridge"
+crate-type = ["staticlib"]
+
+[dependencies]
+typeforge-client = { path = "../../../crates/client" }
+tokio = { version = "1.0", features = ["rt-multi-thread"] }
+libc = "0.2"

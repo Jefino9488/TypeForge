@@ -1,8 +1,8 @@
-use crate::traits::{Dictionary, Predictor};
-use typeforge_protocol::{Prediction, PredictionSource};
 use crate::db::Database;
+use crate::traits::{Dictionary, Predictor};
 use std::collections::HashMap;
 use std::error::Error;
+use typeforge_protocol::{Prediction, PredictionSource};
 
 pub struct MutableDictionary {
     db: Database,
@@ -43,10 +43,10 @@ impl Dictionary for MutableDictionary {
             self.words.push(word.to_string());
             self.words.sort();
         }
-        
+
         let current_freq = self.frequencies.entry(word.to_string()).or_insert(0);
         *current_freq += freq;
-        
+
         self.db.upsert_word(word, freq)?;
         Ok(())
     }

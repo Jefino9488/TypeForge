@@ -1148,6 +1148,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "typeforge-client"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "typeforge-common",
+ "typeforge-protocol",
+ "uuid",
+]
+
+[[package]]
 name = "typeforge-common"
 version = "0.1.0"
 dependencies = [
@@ -1162,6 +1172,7 @@ name = "typeforge-daemon"
 version = "0.1.0"
 dependencies = [
  "directories",
+ "flate2",
  "serde_json",
  "tokio",
  "tracing",
@@ -1169,6 +1180,7 @@ dependencies = [
  "typeforge-common",
  "typeforge-engine",
  "typeforge-protocol",
+ "uuid",
 ]
 
 [[package]]
@@ -1184,6 +1196,15 @@ dependencies = [
  "tracing",
  "typeforge-protocol",
  "uuid",
+]
+
+[[package]]
+name = "typeforge-fcitx5-bridge"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "tokio",
+ "typeforge-client",
 ]
 
 [[package]]
