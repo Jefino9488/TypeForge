@@ -1,1 +1,10 @@
 /target
+/build
+/.idea
+/src
+*.so
+*.o
+*.a
+*.dylib
+.DS_Store
+typeforge_learned.db

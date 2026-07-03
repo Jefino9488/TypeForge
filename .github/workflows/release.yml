@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Install Git
+      run: pacman -Syu --noconfirm && pacman -S --noconfirm git
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: pacman -S --noconfirm base-devel rust cmake fcitx5 pkgconf make
+
+    - name: Build TypeForge Daemon
+      run: cargo build --release -p typeforge-daemon
+
+    - name: Build Fcitx5 Rust Bridge
+      run: cargo build --release -p typeforge-fcitx5-bridge
+
+    - name: Build Fcitx5 C++ Adapter
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ../adapters/fcitx5/cpp
+        make -j$(nproc)
+
+    - name: Prepare Release Artifacts
+      run: |
+        mkdir -p release-artifacts
+        cp target/release/typeforge-daemon release-artifacts/
+        cp build/fcitx5-typeforge.so release-artifacts/
+        cp build/typeforge.conf release-artifacts/
+        cp build/typeforge-im.conf release-artifacts/
+        cd release-artifacts
+        tar -czvf TypeForge-Linux-x86_64.tar.gz *
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release-artifacts/TypeForge-Linux-x86_64.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true
