@@ -54,18 +54,24 @@ impl TypeForgeEngine {
     }
 
     pub fn predict(&self, prefix: &str, req: &PredictRequest, limit: usize) -> Vec<Prediction> {
-        let is_all_caps = !prefix.is_empty() && prefix.chars().all(|c| !c.is_alphabetic() || c.is_uppercase());
+        let is_all_caps = !prefix.is_empty()
+            && prefix
+                .chars()
+                .all(|c| !c.is_alphabetic() || c.is_uppercase());
         let is_capitalized = !prefix.is_empty() && prefix.chars().next().unwrap().is_uppercase();
-        
+
         let search_prefix = prefix.to_lowercase();
-        
+
         let immut = self.immutable.load();
 
         // 1. Get raw candidates from the dictionary prior
         let mut candidates = immut.predict(&search_prefix, req, limit * 2);
 
         // 1b. Get raw candidates from the learning database
-        if let Ok(learned_words) = self.learner.get_candidates_by_prefix(&search_prefix, limit * 2) {
+        if let Ok(learned_words) = self
+            .learner
+            .get_candidates_by_prefix(&search_prefix, limit * 2)
+        {
             for word in learned_words {
                 if !candidates.iter().any(|c| c.text == word) {
                     candidates.push(Prediction {

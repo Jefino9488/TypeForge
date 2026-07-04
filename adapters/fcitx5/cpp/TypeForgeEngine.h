@@ -1,86 +1,95 @@
 #ifndef TYPEFORGE_ENGINE_H
 #define TYPEFORGE_ENGINE_H
 
+#include <fcitx-utils/event.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addoninstance.h>
+#include <fcitx/candidatelist.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputmethodengine.h>
-#include <fcitx/candidatelist.h>
 #include <fcitx/instance.h>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
-#include <fcitx-utils/event.h>
 
 extern "C" {
-    struct C_Prediction {
-        const char* text;
-        float score;
-        uint32_t source;
-    };
+struct C_Prediction {
+  const char *text;
+  float score;
+  uint32_t source;
+};
 
-    struct C_PredictionList {
-        C_Prediction* predictions;
-        size_t count;
-        uint64_t generation;
-    };
+struct C_PredictionList {
+  C_Prediction *predictions;
+  size_t count;
+  uint64_t generation;
+};
 
-    typedef void (*PredictCallback)(C_PredictionList* list, void* user_data);
+typedef void (*PredictCallback)(C_PredictionList *list, void *user_data);
 
-    void typeforge_predict_async(const char* prefix, const char* surrounding_text, const char* application, uint64_t generation, PredictCallback callback, void* user_data);
-    C_PredictionList* typeforge_predict_sync(const char* prefix, const char* surrounding_text, const char* application);
-    void typeforge_free_prediction_list(C_PredictionList* list);
-    void typeforge_learn(const char* word, int64_t delta, const char* application);
+void typeforge_predict_async(const char *prefix, const char *surrounding_text,
+                             const char *application, uint64_t generation,
+                             PredictCallback callback, void *user_data);
+C_PredictionList *typeforge_predict_sync(const char *prefix,
+                                         const char *surrounding_text,
+                                         const char *application);
+void typeforge_free_prediction_list(C_PredictionList *list);
+void typeforge_learn(const char *word, int64_t delta, const char *application);
 }
 
 class TypeForgeEngine : public fcitx::InputMethodEngineV2 {
 public:
-    explicit TypeForgeEngine(fcitx::Instance* instance);
-    ~TypeForgeEngine() override;
+  explicit TypeForgeEngine(fcitx::Instance *instance);
+  ~TypeForgeEngine() override;
 
-    void keyEvent(const fcitx::InputMethodEntry& entry, fcitx::KeyEvent& keyEvent) override;
-    void reset(const fcitx::InputMethodEntry&, fcitx::InputContextEvent& event) override;
+  void keyEvent(const fcitx::InputMethodEntry &entry,
+                fcitx::KeyEvent &keyEvent) override;
+  void reset(const fcitx::InputMethodEntry &,
+             fcitx::InputContextEvent &event) override;
 
-    void commitString(fcitx::InputContext* ic, const std::string& str, bool is_accepted = false);
-    
-    static void onPredictionsReady(C_PredictionList* list, void* user_data);
-    
-    fcitx::Instance* instance() const { return instance_; }
-    fcitx::InputContext* activeContext() const { return active_ic_; }
-    uint64_t currentGeneration() const { return current_generation_; }
+  void commitString(fcitx::InputContext *ic, const std::string &str,
+                    bool is_accepted = false);
+
+  static void onPredictionsReady(C_PredictionList *list, void *user_data);
+
+  fcitx::Instance *instance() const { return instance_; }
+  fcitx::InputContext *activeContext() const { return active_ic_; }
+  uint64_t currentGeneration() const { return current_generation_; }
 
 private:
-    void updatePreedit(fcitx::InputContext* ic);
+  void updatePreedit(fcitx::InputContext *ic);
 
-    fcitx::Instance* instance_;
-    fcitx::InputContext* active_ic_ = nullptr;
-    std::string preedit_;
-    uint64_t current_generation_ = 0;
-    bool suggestion_explicitly_selected_ = false;
+  fcitx::Instance *instance_;
+  fcitx::InputContext *active_ic_ = nullptr;
+  std::string preedit_;
+  uint64_t current_generation_ = 0;
+  bool suggestion_explicitly_selected_ = false;
 
-    // Cross-thread communication
-    int pipe_fd_[2];
-    std::unique_ptr<fcitx::EventSourceIO> io_event_;
-    std::mutex queue_mutex_;
-    std::vector<C_PredictionList*> result_queue_;
+  // Cross-thread communication
+  int pipe_fd_[2];
+  std::unique_ptr<fcitx::EventSourceIO> io_event_;
+  std::mutex queue_mutex_;
+  std::vector<C_PredictionList *> result_queue_;
 
-    void processResultQueue();
+  void processResultQueue();
 };
 
 class TypeForgeEngineFactory : public fcitx::AddonFactory {
 public:
-    fcitx::AddonInstance* create(fcitx::AddonManager* manager) override;
+  fcitx::AddonInstance *create(fcitx::AddonManager *manager) override;
 };
 
 class TypeForgeCandidateWord : public fcitx::CandidateWord {
 public:
-    TypeForgeCandidateWord(std::string text, fcitx::InputContext* ic, TypeForgeEngine* engine);
-    void select(fcitx::InputContext* ic) const override;
+  TypeForgeCandidateWord(std::string text, fcitx::InputContext *ic,
+                         TypeForgeEngine *engine);
+  void select(fcitx::InputContext *ic) const override;
+
 private:
-    std::string text_;
-    fcitx::InputContext* ic_;
-    TypeForgeEngine* engine_;
+  std::string text_;
+  fcitx::InputContext *ic_;
+  TypeForgeEngine *engine_;
 };
 
 #endif // TYPEFORGE_ENGINE_H
