@@ -49,13 +49,14 @@ pub fn list_themes() {
                 let toml_path = path.join("theme.toml");
                 if toml_path.exists() {
                     if let Ok(content) = fs::read_to_string(&toml_path)
-                        && let Ok(metadata) = toml::from_str::<ThemeMetadata>(&content) {
-                            let theme_id = path.file_name().unwrap().to_string_lossy();
-                            println!(
-                                "- {} ({}) - by {}",
-                                metadata.name, theme_id, metadata.author
-                            );
-                        }
+                        && let Ok(metadata) = toml::from_str::<ThemeMetadata>(&content)
+                    {
+                        let theme_id = path.file_name().unwrap().to_string_lossy();
+                        println!(
+                            "- {} ({}) - by {}",
+                            metadata.name, theme_id, metadata.author
+                        );
+                    }
                 } else {
                     let theme_id = path.file_name().unwrap().to_string_lossy();
                     println!("- {} (No metadata)", theme_id);
@@ -141,10 +142,11 @@ pub fn current_theme() {
     };
     if let Ok(conf) = Ini::load_from_file(&conf_path)
         && let Some(section) = conf.section(None::<String>)
-            && let Some(theme) = section.get("Theme") {
-                println!("Current Theme: {}", theme);
-                return;
-            }
+        && let Some(theme) = section.get("Theme")
+    {
+        println!("Current Theme: {}", theme);
+        return;
+    }
     println!("Theme not set in classicui.conf");
 }
 

@@ -1431,7 +1431,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "colored",
@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-client"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
  "typeforge-common",
@@ -1459,7 +1459,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-common"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "bytemuck",
  "directories",
@@ -1472,7 +1472,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-daemon"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "directories",
  "dirs",
@@ -1492,7 +1492,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-engine"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "arc-swap",
  "bytemuck",
@@ -1512,7 +1512,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-fcitx5-bridge"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "libc",
  "tokio",
@@ -1521,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "typeforge-protocol"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",

@@ -11,7 +11,7 @@ mod theme;
 
 #[derive(Parser)]
 #[command(name = "typeforge")]
-#[command(version = "0.3.0-alpha1", about = "CLI for TypeForge daemon", long_about = None)]
+#[command(version = "0.3.0", about = "CLI for TypeForge daemon", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -65,19 +65,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             Commands::Doctor => {
                 theme::doctor_info();
                 run_doctor(&socket_path).await
-            },
+            }
             Commands::Info => run_info(&socket_path).await,
-            Commands::Theme { action } => {
-                match action {
-                    ThemeCommand::List => theme::list_themes(),
-                    ThemeCommand::Apply { theme_name } => theme::apply_theme(&theme_name),
-                    ThemeCommand::Current => theme::current_theme(),
-                    ThemeCommand::Restore => theme::restore_theme(),
-                }
+            Commands::Theme { action } => match action {
+                ThemeCommand::List => theme::list_themes(),
+                ThemeCommand::Apply { theme_name } => theme::apply_theme(&theme_name),
+                ThemeCommand::Current => theme::current_theme(),
+                ThemeCommand::Restore => theme::restore_theme(),
             },
             Commands::Layout { mode } => {
                 theme::set_layout(&mode);
-            },
+            }
             Commands::Predict {
                 prefix: text_before,
             } => {

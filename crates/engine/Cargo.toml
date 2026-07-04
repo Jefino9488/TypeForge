@@ -1,6 +1,6 @@
 [package]
 name = "typeforge-engine"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 
 [dependencies]
@@ -15,7 +15,7 @@ unicode-segmentation = "1.13.3"
 serde = { version = "1.0.228", features = ["derive"] }
 memmap2 = "0.9.11"
 bytemuck = { version = "1.25.0", features = ["derive"] }
-typeforge-common = { version = "0.1.0", path = "../common" }
+typeforge-common = { version = "0.3.0", path = "../common" }
 
 [dev-dependencies]
 uuid = { version = "1.8.0", features = ["v4"] }
