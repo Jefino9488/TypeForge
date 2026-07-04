@@ -54,13 +54,18 @@ impl TypeForgeEngine {
     }
 
     pub fn predict(&self, prefix: &str, req: &PredictRequest, limit: usize) -> Vec<Prediction> {
+        let is_all_caps = !prefix.is_empty() && prefix.chars().all(|c| !c.is_alphabetic() || c.is_uppercase());
+        let is_capitalized = !prefix.is_empty() && prefix.chars().next().unwrap().is_uppercase();
+        
+        let search_prefix = prefix.to_lowercase();
+        
         let immut = self.immutable.load();
 
         // 1. Get raw candidates from the dictionary prior
-        let mut candidates = immut.predict(prefix, req, limit * 2);
+        let mut candidates = immut.predict(&search_prefix, req, limit * 2);
 
         // 1b. Get raw candidates from the learning database
-        if let Ok(learned_words) = self.learner.get_candidates_by_prefix(prefix, limit * 2) {
+        if let Ok(learned_words) = self.learner.get_candidates_by_prefix(&search_prefix, limit * 2) {
             for word in learned_words {
                 if !candidates.iter().any(|c| c.text == word) {
                     candidates.push(Prediction {
@@ -73,8 +78,8 @@ impl TypeForgeEngine {
         }
 
         // 1c. Spell check fallback if few candidates
-        if candidates.len() < limit && prefix.len() >= 3 {
-            let corrections = self.correct_spelling(prefix, limit - candidates.len());
+        if candidates.len() < limit && search_prefix.len() >= 3 {
+            let corrections = self.correct_spelling(&search_prefix, limit - candidates.len());
             for mut c in corrections {
                 if !candidates.iter().any(|existing| existing.text == c.text) {
                     c.source = PredictionSource::SpellCorrection;
@@ -98,7 +103,24 @@ impl TypeForgeEngine {
             c.score /= max_score;
         }
 
-        candidates.into_iter().take(limit).collect()
+        // 4. Take top limit
+        candidates.truncate(limit);
+
+        // 5. Restore casing
+        if is_all_caps {
+            for c in &mut candidates {
+                c.text = c.text.to_uppercase();
+            }
+        } else if is_capitalized {
+            for c in &mut candidates {
+                let mut chars = c.text.chars();
+                if let Some(first) = chars.next() {
+                    c.text = first.to_uppercase().collect::<String>() + chars.as_str();
+                }
+            }
+        }
+
+        candidates
     }
 
     pub fn correct_spelling(&self, word: &str, limit: usize) -> Vec<Prediction> {

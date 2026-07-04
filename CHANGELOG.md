@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.2] - 2026-07-04
 ### Fixed
 - Fixed a bug where fast-typing punctuation marks or uppercase letters would cause the entire typed word to silently vanish.
+- Added smart casing to the engine backend so uppercase typed letters intelligently match lowercase dictionary words and restore capitalization.
 
 ## [0.2.1] - 2026-07-04
 ### Fixed
