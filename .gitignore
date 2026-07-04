@@ -8,3 +8,5 @@
 *.dylib
 .DS_Store
 typeforge_learned.db
+
+*.log
