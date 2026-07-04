@@ -1,7 +1,12 @@
 use typeforge_protocol::Prediction;
 
 pub trait Predictor: Send + Sync {
-    fn predict(&self, prefix: &str, req: &typeforge_protocol::PredictRequest, limit: usize) -> Vec<Prediction>;
+    fn predict(
+        &self,
+        prefix: &str,
+        req: &typeforge_protocol::PredictRequest,
+        limit: usize,
+    ) -> Vec<Prediction>;
 }
 
 pub trait SpellChecker: Send + Sync {

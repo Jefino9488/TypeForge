@@ -24,7 +24,11 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
 
                         let response_payload = match env.payload {
                             Request::Predict(r) => {
-                                let predictions = engine.predict(&r.text_before_cursor, &r, 5);
+                                let predictions = engine.predict(
+                                    &r.text_before_cursor,
+                                    &r,
+                                    engine.get_candidate_limit(),
+                                );
                                 Response::Predict { predictions }
                             }
                             Request::Learn(r) => {
@@ -109,7 +113,7 @@ mod tests {
         encoder.write_all(b"apple,100\n").unwrap();
         encoder.finish().unwrap();
 
-        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path).unwrap());
+        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap());
 
         tokio::spawn(async move {
             handle_client(server, engine).await;

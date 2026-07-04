@@ -1,8 +1,8 @@
+use crate::learning::persistence::{LearningDb, TelemetryDb};
+use crate::learning::scorer::ScorePipeline;
+use crate::learning::session::SessionMemory;
 use std::error::Error;
 use std::sync::Arc;
-use crate::learning::persistence::{LearningDb, TelemetryDb};
-use crate::learning::session::SessionMemory;
-use crate::learning::scorer::ScorePipeline;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -45,7 +45,11 @@ impl Learner {
     }
 
     /// Process feedback when a user accepts a prediction
-    pub fn on_prediction_accepted(&self, word: &str, context: Option<&str>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub fn on_prediction_accepted(
+        &self,
+        word: &str,
+        context: Option<&str>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         if !self.config.learning_enabled.load(Ordering::Relaxed) {
             return Ok(());
         }
@@ -60,29 +64,40 @@ impl Learner {
     }
 
     /// Process feedback when a user manually types a word (not from prediction)
-    pub fn on_word_typed(&self, word: &str, context: Option<&str>, is_common: bool) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub fn on_word_typed(
+        &self,
+        word: &str,
+        context: Option<&str>,
+        is_common: bool,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         if !self.config.learning_enabled.load(Ordering::Relaxed) {
             return Ok(());
         }
-        
+
         self.session_memory.add(word);
-        
+
         if is_common {
             // "Common dictionary word typed -> no learning needed."
             return Ok(());
         }
-        
+
         // Smaller positive reinforcement for manual typing
         self.learning_db.increase_weight(word, context, 2)?;
-        
+
         Ok(())
     }
 
-    pub fn get_candidates_by_prefix(&self, prefix: &str, limit: usize) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+    pub fn get_candidates_by_prefix(
+        &self,
+        prefix: &str,
+        limit: usize,
+    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         self.learning_db.get_candidates_by_prefix(prefix, limit)
     }
 
     pub fn set_learning_enabled(&self, enabled: bool) {
-        self.config.learning_enabled.store(enabled, Ordering::Relaxed);
+        self.config
+            .learning_enabled
+            .store(enabled, Ordering::Relaxed);
     }
 }

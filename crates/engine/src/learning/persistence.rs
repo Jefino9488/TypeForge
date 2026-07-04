@@ -9,7 +9,7 @@ pub struct LearningDb {
 impl LearningDb {
     pub fn new(path: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let conn = Connection::open(path)?;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS user_words (
                 word TEXT PRIMARY KEY,
@@ -20,11 +20,20 @@ impl LearningDb {
             )",
             [],
         )?;
-        
+
         // Ensure columns exist for older DBs
-        let _ = conn.execute("ALTER TABLE user_words ADD COLUMN first_seen INTEGER NOT NULL DEFAULT 0", []);
-        let _ = conn.execute("ALTER TABLE user_words ADD COLUMN last_used INTEGER NOT NULL DEFAULT 0", []);
-        let _ = conn.execute("ALTER TABLE user_words ADD COLUMN confidence REAL NOT NULL DEFAULT 0.0", []);
+        let _ = conn.execute(
+            "ALTER TABLE user_words ADD COLUMN first_seen INTEGER NOT NULL DEFAULT 0",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE user_words ADD COLUMN last_used INTEGER NOT NULL DEFAULT 0",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE user_words ADD COLUMN confidence REAL NOT NULL DEFAULT 0.0",
+            [],
+        );
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS context_frequencies (
@@ -36,13 +45,22 @@ impl LearningDb {
             [],
         )?;
 
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
-    pub fn increase_weight(&self, word: &str, context: Option<&str>, amount: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub fn increase_weight(
+        &self,
+        word: &str,
+        context: Option<&str>,
+        amount: i64,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let conn = self.conn.lock().unwrap();
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs() as i64;
-        
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs() as i64;
+
         conn.execute(
             "INSERT INTO user_words (word, frequency, first_seen, last_used, confidence) VALUES (?1, ?2, ?3, ?3, 1.0)
              ON CONFLICT(word) DO UPDATE SET 
@@ -63,11 +81,15 @@ impl LearningDb {
         Ok(())
     }
 
-    pub fn get_weight(&self, word: &str, context: Option<&str>) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub fn get_weight(
+        &self,
+        word: &str,
+        context: Option<&str>,
+    ) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let conn = self.conn.lock().unwrap();
-        
+
         let mut total = 0i64;
-        
+
         if let Ok(freq) = conn.query_row(
             "SELECT frequency FROM user_words WHERE word = ?1",
             rusqlite::params![word],
@@ -89,17 +111,23 @@ impl LearningDb {
         Ok(total)
     }
 
-    pub fn get_candidates_by_prefix(&self, prefix: &str, limit: usize) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+    pub fn get_candidates_by_prefix(
+        &self,
+        prefix: &str,
+        limit: usize,
+    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT word FROM user_words WHERE word LIKE ?1 ORDER BY frequency DESC LIMIT ?2")?;
+        let mut stmt = conn.prepare(
+            "SELECT word FROM user_words WHERE word LIKE ?1 ORDER BY frequency DESC LIMIT ?2",
+        )?;
         let prefix_like = format!("{}%", prefix);
-        
+
         let mut rows = stmt.query(rusqlite::params![prefix_like, limit])?;
         let mut candidates = Vec::new();
         while let Some(row) = rows.next()? {
             candidates.push(row.get(0)?);
         }
-        
+
         Ok(candidates)
     }
 }
@@ -111,7 +139,7 @@ pub struct TelemetryDb {
 impl TelemetryDb {
     pub fn new(path: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let conn = Connection::open(path)?;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS telemetry (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +149,9 @@ impl TelemetryDb {
             )",
             [],
         )?;
-        
-        Ok(Self { conn: Mutex::new(conn) })
+
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 }

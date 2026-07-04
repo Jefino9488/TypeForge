@@ -1,5 +1,5 @@
-use std::sync::RwLock;
 use std::collections::VecDeque;
+use std::sync::RwLock;
 
 const MAX_SESSION_WORDS: usize = 100;
 

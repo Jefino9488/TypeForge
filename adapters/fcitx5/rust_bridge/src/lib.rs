@@ -56,7 +56,12 @@ pub extern "C" fn typeforge_predict_async(
     let application_str = if application.is_null() {
         None
     } else {
-        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+        unsafe {
+            CStr::from_ptr(application)
+                .to_str()
+                .ok()
+                .map(|s| s.to_string())
+        }
     };
 
     if prefix_str.is_empty() {
@@ -117,7 +122,10 @@ pub extern "C" fn typeforge_predict_async(
 
 #[no_mangle]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn typeforge_predict_sync(prefix: *const c_char, application: *const c_char) -> *mut C_PredictionList {
+pub extern "C" fn typeforge_predict_sync(
+    prefix: *const c_char,
+    application: *const c_char,
+) -> *mut C_PredictionList {
     if prefix.is_null() {
         return ptr::null_mut();
     }
@@ -132,7 +140,12 @@ pub extern "C" fn typeforge_predict_sync(prefix: *const c_char, application: *co
     let application_str = if application.is_null() {
         None
     } else {
-        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+        unsafe {
+            CStr::from_ptr(application)
+                .to_str()
+                .ok()
+                .map(|s| s.to_string())
+        }
     };
 
     if prefix_str.is_empty() {
@@ -222,7 +235,12 @@ pub extern "C" fn typeforge_learn(word: *const c_char, delta: i64, application: 
     let application_str = if application.is_null() {
         None
     } else {
-        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+        unsafe {
+            CStr::from_ptr(application)
+                .to_str()
+                .ok()
+                .map(|s| s.to_string())
+        }
     };
 
     // Fire and forget, no callback needed for learning

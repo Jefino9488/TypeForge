@@ -42,7 +42,8 @@ impl TypeForgeClient {
             payload: Request::Predict(PredictRequest {
                 text_before_cursor: prefix.to_string(),
                 text_after_cursor: String::new(),
-                cursor_position: unicode_segmentation::UnicodeSegmentation::graphemes(prefix, true).count(),
+                cursor_position: unicode_segmentation::UnicodeSegmentation::graphemes(prefix, true)
+                    .count(),
                 application: app,
                 language: None,
             }),
@@ -70,12 +71,7 @@ impl TypeForgeClient {
         }
     }
 
-    pub fn learn(
-        &self,
-        word: &str,
-        delta: i64,
-        _app: Option<String>,
-    ) -> Result<(), String> {
+    pub fn learn(&self, word: &str, delta: i64, _app: Option<String>) -> Result<(), String> {
         let mut stream = UnixStream::connect(&self.socket_path)
             .map_err(|e| format!("Failed to connect to daemon: {}", e))?;
 

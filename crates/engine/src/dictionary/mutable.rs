@@ -53,7 +53,12 @@ impl Dictionary for MutableDictionary {
 }
 
 impl Predictor for MutableDictionary {
-    fn predict(&self, prefix: &str, _req: &typeforge_protocol::PredictRequest, limit: usize) -> Vec<Prediction> {
+    fn predict(
+        &self,
+        prefix: &str,
+        _req: &typeforge_protocol::PredictRequest,
+        limit: usize,
+    ) -> Vec<Prediction> {
         let start = self.words.partition_point(|x| x.as_str() < prefix);
         let mut results = Vec::new();
         for i in start..self.words.len() {
