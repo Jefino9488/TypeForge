@@ -22,7 +22,8 @@ TypeForge currently supports **Linux (Wayland & X11)** via Fcitx5.
 ```bash
 tar -xzf TypeForge-Linux-x86_64.tar.gz
 cd typeforge
-./install.sh
+chmod +x install.sh
+sudo ./install.sh
 ```
 
 ### 🚀 Quick Start

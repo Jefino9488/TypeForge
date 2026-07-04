@@ -40,6 +40,8 @@ jobs:
     - name: Prepare Release Artifacts
       run: |
         mkdir -p release-artifacts
+        cp install.sh release-artifacts/
+        chmod +x release-artifacts/install.sh
         cp target/release/typeforge-daemon release-artifacts/
         cp build/fcitx5-typeforge.so release-artifacts/
         cp build/typeforge.conf release-artifacts/
