@@ -10,3 +10,4 @@
 typeforge_learned.db
 
 *.log
+/dist/
