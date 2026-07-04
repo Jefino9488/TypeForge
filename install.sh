@@ -32,12 +32,18 @@ if [ -n "$SUDO_USER" ]; then
     fi
 fi
 
-echo "[3/4] Installing daemon..."
+echo "[3/4] Installing daemon and CLI..."
 mkdir -p /usr/local/bin
 killall typeforge-daemon 2>/dev/null || true
 rm -f /usr/local/bin/typeforge-daemon
 cp typeforge-daemon /usr/local/bin/
 chmod 755 /usr/local/bin/typeforge-daemon
+
+if [ -f "typeforge" ]; then
+    rm -f /usr/local/bin/typeforge
+    cp typeforge /usr/local/bin/
+    chmod 755 /usr/local/bin/typeforge
+fi
 
 echo "[4/5] Setting up autostart..."
 mkdir -p /etc/xdg/autostart

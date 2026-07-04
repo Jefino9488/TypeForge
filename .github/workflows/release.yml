@@ -30,6 +30,9 @@ jobs:
     - name: Build Fcitx5 Rust Bridge
       run: cargo build --release -p typeforge-fcitx5-bridge
 
+    - name: Build TypeForge CLI
+      run: cargo build --release -p typeforge-cli
+
     - name: Build Fcitx5 C++ Adapter
       run: |
         mkdir -p build
@@ -43,9 +46,11 @@ jobs:
         cp install.sh release-artifacts/
         chmod +x release-artifacts/install.sh
         cp target/release/typeforge-daemon release-artifacts/
+        cp target/release/typeforge-cli release-artifacts/typeforge
         cp build/fcitx5-typeforge.so release-artifacts/
         cp build/typeforge.conf release-artifacts/
         cp build/typeforge-im.conf release-artifacts/
+        cp -r assets release-artifacts/
         cd release-artifacts
         tar -czvf TypeForge-Linux-x86_64.tar.gz *
 
