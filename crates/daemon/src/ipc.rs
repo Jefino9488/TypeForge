@@ -24,21 +24,29 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
 
                         let response_payload = match env.payload {
                             Request::Predict(r) => {
-                                let predictions = engine.predict(&r.text_before_cursor, 5);
+                                let predictions = engine.predict(&r.text_before_cursor, &r, 5);
                                 Response::Predict { predictions }
                             }
-                            Request::Learn(r) => match engine.learn(&r.word, r.frequency_delta) {
-                                Ok(_) => Response::Success,
-                                Err(e) => {
-                                    error!("Failed to learn word: {}", e);
-                                    Response::Error {
-                                        code: "LEARN_ERROR".into(),
-                                        message: e.to_string(),
+                            Request::Learn(r) => {
+                                let accepted = r.frequency_delta > 0;
+                                // In the future, Fcitx should send `application` in LearnRequest as well
+                                match engine.learn(&r.word, None, accepted) {
+                                    Ok(_) => Response::Success,
+                                    Err(e) => {
+                                        error!("Failed to learn word: {}", e);
+                                        Response::Error {
+                                            code: "LEARN_ERROR".into(),
+                                            message: e.to_string(),
+                                        }
                                     }
                                 }
-                            },
+                            }
                             Request::ReloadDictionary => {
                                 engine.reload_dictionary_background();
+                                Response::Success
+                            }
+                            Request::SetLearningEnabled(enabled) => {
+                                engine.set_learning_enabled(enabled);
                                 Response::Success
                             }
                         };
@@ -91,7 +99,8 @@ mod tests {
         let test_dir = std::env::temp_dir().join(Uuid::new_v4().to_string());
         std::fs::create_dir_all(&test_dir).unwrap();
         let dict_path = test_dir.join("dict.csv.gz").to_string_lossy().to_string();
-        let db_path = test_dir.join("test.db").to_string_lossy().to_string();
+        let l_db_path = test_dir.join("learning.db").to_string_lossy().to_string();
+        let t_db_path = test_dir.join("telemetry.db").to_string_lossy().to_string();
 
         // Setup empty dummy dict
         let file = std::fs::File::create(&dict_path).unwrap();
@@ -100,7 +109,7 @@ mod tests {
         encoder.write_all(b"apple,100\n").unwrap();
         encoder.finish().unwrap();
 
-        let engine = Arc::new(TypeForgeEngine::new(dict_path, &db_path).unwrap());
+        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path).unwrap());
 
         tokio::spawn(async move {
             handle_client(server, engine).await;

@@ -37,6 +37,7 @@ pub type PredictCallback = extern "C" fn(*mut C_PredictionList, *mut libc::c_voi
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn typeforge_predict_async(
     prefix: *const c_char,
+    application: *const c_char,
     generation: u64,
     callback: PredictCallback,
     user_data: *mut libc::c_void,
@@ -52,6 +53,12 @@ pub extern "C" fn typeforge_predict_async(
         }
     };
 
+    let application_str = if application.is_null() {
+        None
+    } else {
+        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+    };
+
     if prefix_str.is_empty() {
         return;
     }
@@ -64,7 +71,7 @@ pub extern "C" fn typeforge_predict_async(
         let callback_fn: PredictCallback = unsafe { std::mem::transmute(callback_ptr) };
         let user_data_raw = user_data_ptr as *mut libc::c_void;
         let client = TypeForgeClient::new();
-        let result = client.predict(&prefix_str, 5, Some("fcitx5".to_string()));
+        let result = client.predict(&prefix_str, 5, application_str);
 
         let mut c_preds = Vec::new();
         if let Ok(predictions) = result {
@@ -110,7 +117,7 @@ pub extern "C" fn typeforge_predict_async(
 
 #[no_mangle]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn typeforge_predict_sync(prefix: *const c_char) -> *mut C_PredictionList {
+pub extern "C" fn typeforge_predict_sync(prefix: *const c_char, application: *const c_char) -> *mut C_PredictionList {
     if prefix.is_null() {
         return ptr::null_mut();
     }
@@ -122,12 +129,18 @@ pub extern "C" fn typeforge_predict_sync(prefix: *const c_char) -> *mut C_Predic
         }
     };
 
+    let application_str = if application.is_null() {
+        None
+    } else {
+        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+    };
+
     if prefix_str.is_empty() {
         return ptr::null_mut();
     }
 
     let client = TypeForgeClient::new();
-    let result = client.predict(&prefix_str, 5, Some("fcitx5".to_string()));
+    let result = client.predict(&prefix_str, 5, application_str);
 
     let mut c_preds = Vec::new();
     if let Ok(predictions) = result {
@@ -186,4 +199,35 @@ pub extern "C" fn typeforge_free_prediction_list(list: *mut C_PredictionList) {
             ));
         }
     }
+}
+
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn typeforge_learn(word: *const c_char, delta: i64, application: *const c_char) {
+    if word.is_null() {
+        return;
+    }
+
+    let word_str = unsafe {
+        match CStr::from_ptr(word).to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => return,
+        }
+    };
+
+    if word_str.is_empty() {
+        return;
+    }
+
+    let application_str = if application.is_null() {
+        None
+    } else {
+        unsafe { CStr::from_ptr(application).to_str().ok().map(|s| s.to_string()) }
+    };
+
+    // Fire and forget, no callback needed for learning
+    get_runtime().spawn_blocking(move || {
+        let client = TypeForgeClient::new();
+        let _ = client.learn(&word_str, delta, application_str);
+    });
 }

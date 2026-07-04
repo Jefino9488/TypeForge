@@ -14,6 +14,7 @@ pub enum Request {
     Predict(PredictRequest),
     Learn(LearnRequest),
     ReloadDictionary,
+    SetLearningEnabled(bool),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

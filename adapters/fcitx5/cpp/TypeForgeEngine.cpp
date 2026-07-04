@@ -51,7 +51,8 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
         updatePreedit(ic);
         
         current_generation_++;
-        typeforge_predict_async(preedit_.c_str(), current_generation_, TypeForgeEngine::onPredictionsReady, this);
+        std::string app = ic->program();
+        typeforge_predict_async(preedit_.c_str(), app.empty() ? nullptr : app.c_str(), current_generation_, TypeForgeEngine::onPredictionsReady, this);
         keyEvent.filterAndAccept();
         return;
     }
@@ -60,11 +61,20 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
         auto candidateList = ic->inputPanel().candidateList();
 
         if (key.sym() == FcitxKey_BackSpace) {
-            preedit_.pop_back();
+            if (!preedit_.empty()) {
+                while (!preedit_.empty()) {
+                    char c = preedit_.back();
+                    preedit_.pop_back();
+                    if ((c & 0xC0) != 0x80) {
+                        break;
+                    }
+                }
+            }
             updatePreedit(ic);
             if (!preedit_.empty()) {
                 current_generation_++;
-                typeforge_predict_async(preedit_.c_str(), current_generation_, TypeForgeEngine::onPredictionsReady, this);
+                std::string app = ic->program();
+                typeforge_predict_async(preedit_.c_str(), app.empty() ? nullptr : app.c_str(), current_generation_, TypeForgeEngine::onPredictionsReady, this);
             } else {
                 current_generation_++;
                 ic->inputPanel().reset();
@@ -104,9 +114,9 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
             int index = key.sym() - FcitxKey_1;
             if (candidateList && index < candidateList->size()) {
                 std::string text = candidateList->candidate(index).text().toString();
-                commitString(ic, text);
+                commitString(ic, text, true);
             } else {
-                commitString(ic, preedit_);
+                commitString(ic, preedit_, false);
                 ic->commitString(std::string(1, static_cast<char>(key.sym())));
             }
             keyEvent.filterAndAccept();
@@ -115,6 +125,7 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
 
         if (key.sym() == FcitxKey_Return || key.sym() == FcitxKey_space) {
             std::string text_to_commit = preedit_;
+            bool is_accepted = false;
             
             if (key.sym() == FcitxKey_space) {
                 if (candidateList && candidateList->size() > 0) {
@@ -123,17 +134,20 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
                         cursor = 0;
                     }
                     text_to_commit = candidateList->candidate(cursor).text().toString();
+                    is_accepted = true;
                 } else {
                     // Fast typing fallback: query synchronously before committing
-                    C_PredictionList* list = typeforge_predict_sync(preedit_.c_str());
+                    std::string app = ic->program();
+                    C_PredictionList* list = typeforge_predict_sync(preedit_.c_str(), app.empty() ? nullptr : app.c_str());
                     if (list && list->count > 0 && list->predictions[0].text) {
                         text_to_commit = std::string(list->predictions[0].text);
+                        is_accepted = true;
                     }
                     typeforge_free_prediction_list(list);
                 }
             }
             
-            commitString(ic, text_to_commit);
+            commitString(ic, text_to_commit, is_accepted);
             
             if (key.sym() == FcitxKey_space) {
                 ic->commitString(" ");
@@ -144,7 +158,7 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
 
         // For any other key (punctuation, symbols, uppercase letters), commit the current word and let the key pass through
         if (key.isSimple()) {
-            commitString(ic, preedit_);
+            commitString(ic, preedit_, false);
             // Don't filter and accept, so the punctuation passes to the app!
             return;
         }
@@ -164,8 +178,14 @@ void TypeForgeEngine::updatePreedit(fcitx::InputContext* ic) {
     ic->updatePreedit();
 }
 
-void TypeForgeEngine::commitString(fcitx::InputContext* ic, const std::string& str) {
+void TypeForgeEngine::commitString(fcitx::InputContext* ic, const std::string& str, bool is_accepted) {
     FCITX_INFO() << "Committing string: '" << str << "'";
+    
+    // Dispatch learning event
+    std::string app = ic->program();
+    int64_t delta = is_accepted ? 1 : -1;
+    typeforge_learn(str.c_str(), delta, app.empty() ? nullptr : app.c_str());
+
     preedit_.clear();
     current_generation_++;
     ic->inputPanel().reset();
@@ -220,7 +240,7 @@ TypeForgeCandidateWord::TypeForgeCandidateWord(std::string text, fcitx::InputCon
 
 void TypeForgeCandidateWord::select(fcitx::InputContext* ic) const {
     if (engine_) {
-        engine_->commitString(ic, text_);
+        engine_->commitString(ic, text_, true);
     } else {
         ic->inputPanel().reset();
         ic->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);

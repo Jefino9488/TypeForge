@@ -26,9 +26,10 @@ extern "C" {
 
     typedef void (*PredictCallback)(C_PredictionList* list, void* user_data);
 
-    void typeforge_predict_async(const char* prefix, uint64_t generation, PredictCallback callback, void* user_data);
-    C_PredictionList* typeforge_predict_sync(const char* prefix);
+    void typeforge_predict_async(const char* prefix, const char* application, uint64_t generation, PredictCallback callback, void* user_data);
+    C_PredictionList* typeforge_predict_sync(const char* prefix, const char* application);
     void typeforge_free_prediction_list(C_PredictionList* list);
+    void typeforge_learn(const char* word, int64_t delta, const char* application);
 }
 
 class TypeForgeEngine : public fcitx::InputMethodEngineV2 {
@@ -39,7 +40,7 @@ public:
     void keyEvent(const fcitx::InputMethodEntry& entry, fcitx::KeyEvent& keyEvent) override;
     void reset(const fcitx::InputMethodEntry&, fcitx::InputContextEvent& event) override;
 
-    void commitString(fcitx::InputContext* ic, const std::string& str);
+    void commitString(fcitx::InputContext* ic, const std::string& str, bool is_accepted = false);
     
     static void onPredictionsReady(C_PredictionList* list, void* user_data);
     

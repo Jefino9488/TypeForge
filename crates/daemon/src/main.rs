@@ -4,13 +4,12 @@ use std::fs;
 use std::sync::Arc;
 use tokio::net::UnixListener;
 use tracing::{error, info};
-use typeforge_common::config::{get_db_path, get_socket_path};
+use typeforge_common::config::{get_learning_db_path, get_telemetry_db_path, get_socket_path};
 use typeforge_engine::engine::TypeForgeEngine;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tracing_subscriber::fmt::init();
-
     info!("Starting TypeForge daemon...");
 
     let socket_path = get_socket_path();
@@ -20,9 +19,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     let immutable_path = "assets/dictionary-v1.csv.gz".to_string();
-    let db_path = get_db_path();
+    let l_db_path = get_learning_db_path();
+    let t_db_path = get_telemetry_db_path();
 
-    let engine = Arc::new(TypeForgeEngine::new(immutable_path, &db_path)?);
+    let engine = Arc::new(TypeForgeEngine::new(immutable_path, &l_db_path, &t_db_path)?);
 
     let listener = UnixListener::bind(&socket_path)?;
     info!("Listening on {}", socket_path);

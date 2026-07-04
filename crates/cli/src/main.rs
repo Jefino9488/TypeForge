@@ -26,6 +26,10 @@ enum Commands {
         #[arg(short, long, default_value_t = 1)]
         freq: i64,
     },
+    ToggleLearning {
+        #[arg(short, long)]
+        enabled: bool,
+    },
 }
 
 #[tokio::main]
@@ -49,6 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             word,
             frequency_delta: freq,
         }),
+        Commands::ToggleLearning { enabled } => Request::SetLearningEnabled(enabled),
     };
 
     let envelope = ProtocolMessage {
