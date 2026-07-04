@@ -68,7 +68,7 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
         return;
     }
 
-    if (key.isSimple() && key.sym() >= FcitxKey_a && key.sym() <= FcitxKey_z) {
+    if (key.isLAZ() || key.isUAZ()) {
         preedit_ += static_cast<char>(key.sym());
         suggestion_explicitly_selected_ = false;
         updatePreedit(ic);
@@ -192,12 +192,22 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry&, fcitx::KeyEvent& 
             return;
         }
 
-        // For any other key (punctuation, symbols, uppercase letters), commit the current word and let the key pass through
-        if (key.isSimple()) {
+        // For punctuation and symbols, commit the current word and the symbol explicitly.
+        std::string utf8 = fcitx::Key::keySymToUTF8(key.sym());
+        bool has_modifier = static_cast<bool>(key.states() & fcitx::KeyState::Ctrl) || 
+                            static_cast<bool>(key.states() & fcitx::KeyState::Alt) || 
+                            static_cast<bool>(key.states() & fcitx::KeyState::Super);
+        
+        if (!has_modifier && !utf8.empty() && key.sym() >= 0x20 && key.sym() <= 0x7E) {
             commitString(ic, preedit_, false);
-            // Don't filter and accept, so the punctuation passes to the app!
+            ic->commitString(utf8);
+            keyEvent.filterAndAccept();
             return;
         }
+
+        // For control keys or non-printable, just commit preedit and let key pass through to the app
+        commitString(ic, preedit_, false);
+        return;
     }
 }
 
