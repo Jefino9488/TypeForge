@@ -10,8 +10,6 @@
 
 </div>
 
----
-
 ## Why TypeForge?
 
 Linux still lacks a modern, system-wide predictive keyboard.
@@ -30,8 +28,6 @@ Whether you're writing emails, documentation, or chat messages, TypeForge helps 
 - Weak prediction models
 - No personalization
 - No context awareness
-
----
 
 ## Features:
 
@@ -71,7 +67,6 @@ Your keyboard should know where it is typing.
 | **Context-aware**  | ✅         | ❌              |
 | **AI Ready**       | ✅         | ❌              |
 
----
 
 ## 🚀 Quick Start
 
@@ -103,7 +98,6 @@ typeforge theme apply catppuccin-mocha-mauve
 typeforge layout set horizontal
 ```
 
----
 
 ## 🛠️ Command Line Interface
 
@@ -123,7 +117,6 @@ Run `typeforge doctor` at any time to verify that the background daemon, socket,
 - **`theme apply <name>`** - Apply bundled Catppuccin themes.
 - **`layout set <horizontal|vertical>`** - Change the UI orientation of the prediction popup.
 
----
 
 ## Vision & Roadmap
 
@@ -152,14 +145,12 @@ TypeForge isn't just another autocomplete library. It's trying to become the def
 
 ⬜ macOS
 
----
 
 ## Screenshots
 
 ![Horizontal Prediction Popup](assets/screenshots/prediction_popup.png)
 - **Prediction popup:** Predicting "better" in a horizontal layout (Catppuccin theme).
 
----
 
 ## Architecture
 
@@ -183,7 +174,6 @@ Built in Rust for maximum performance. Because a keyboard shouldn't lag.
 
 *(Prediction latency verified via Criterion benchmarks on a 10,000-word dataset.)*
 
----
 
 <div align="center">
   <b><a href="https://github.com/Jefino9488/TypeForge">⭐ Star the repository</a></b> |
