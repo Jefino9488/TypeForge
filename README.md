@@ -32,12 +32,24 @@ Once installed, simply type `typeforge doctor` in your terminal to verify everyt
 
 ```bash
 $ typeforge doctor
+Theme: catppuccin-mocha-mauve
+Layout: Horizontal
+TypeForge Doctor
+Checking system health...
+
 ✓ Daemon running
 ✓ Socket found (/tmp/typeforge.sock)
 ✓ Fcitx plugin installed
 ✓ Config valid
 ✓ Dictionary loaded (en)
 ✓ Learning enabled
+```
+
+You can customize the visual appearance using the bundled themes:
+```bash
+typeforge theme list
+typeforge theme apply catppuccin-mocha-mauve
+typeforge layout set horizontal
 ```
 
 Open any text editor and start typing!
@@ -48,10 +60,11 @@ Open any text editor and start typing!
 
 - **Blazing Fast**: Written in Rust, predictions happen in under `1ms`.
 - **System-Wide**: Integrated natively into your desktop via Fcitx5 (Linux). No Electron, no clunky extensions.
+- **Beautiful Themes**: Bundled with customized Catppuccin themes to make your predictions look incredibly sleek out-of-the-box.
 - **Context-Aware**: Learns that `Vec<String>` belongs in your code editor, but `Best regards,` belongs in your email client.
 - **Spellcheck Fallback**: SymSpell integration instantly corrects typos up to 4 edit distances away.
 - **Privacy First**: Everything runs 100% locally on your machine.
-- **Diagnostics Included**: Run `typeforge doctor` or `typeforge info` instantly to troubleshoot.
+- **Diagnostics Included**: Run `typeforge doctor` or configure via `typeforge theme` instantly from the terminal.
 
 ---
 

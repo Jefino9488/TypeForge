@@ -1,16 +1,13 @@
 use ini::Ini;
+use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct ThemeMetadata {
     pub name: String,
     pub author: String,
-    pub version: String,
-    pub supports_horizontal: bool,
-    pub supports_vertical: bool,
 }
 
 pub fn get_classicui_conf_path() -> Option<PathBuf> {
@@ -51,12 +48,14 @@ pub fn list_themes() {
             if path.is_dir() {
                 let toml_path = path.join("theme.toml");
                 if toml_path.exists() {
-                    if let Ok(content) = fs::read_to_string(&toml_path) {
-                        if let Ok(metadata) = toml::from_str::<ThemeMetadata>(&content) {
+                    if let Ok(content) = fs::read_to_string(&toml_path)
+                        && let Ok(metadata) = toml::from_str::<ThemeMetadata>(&content) {
                             let theme_id = path.file_name().unwrap().to_string_lossy();
-                            println!("- {} ({}) - by {}", metadata.name, theme_id, metadata.author);
+                            println!(
+                                "- {} ({}) - by {}",
+                                metadata.name, theme_id, metadata.author
+                            );
                         }
-                    }
                 } else {
                     let theme_id = path.file_name().unwrap().to_string_lossy();
                     println!("- {} (No metadata)", theme_id);
@@ -85,7 +84,7 @@ pub fn reload_fcitx() {
             println!("Failed to reload Fcitx5. Please restart it manually.");
         }
     } else {
-         println!("Could not find fcitx5-remote. Is Fcitx5 installed?");
+        println!("Could not find fcitx5-remote. Is Fcitx5 installed?");
     }
 }
 
@@ -140,14 +139,12 @@ pub fn current_theme() {
         Some(p) => p,
         None => return,
     };
-    if let Ok(conf) = Ini::load_from_file(&conf_path) {
-        if let Some(section) = conf.section(None::<String>) {
-            if let Some(theme) = section.get("Theme") {
+    if let Ok(conf) = Ini::load_from_file(&conf_path)
+        && let Some(section) = conf.section(None::<String>)
+            && let Some(theme) = section.get("Theme") {
                 println!("Current Theme: {}", theme);
                 return;
             }
-        }
-    }
     println!("Theme not set in classicui.conf");
 }
 
@@ -160,8 +157,12 @@ pub fn doctor_info() {
         if let Some(section) = conf.section(None::<String>) {
             let theme = section.get("Theme").unwrap_or("Default");
             let vertical = section.get("Vertical Candidate List").unwrap_or("True");
-            let layout = if vertical.to_lowercase() == "false" { "Horizontal" } else { "Vertical" };
-            
+            let layout = if vertical.to_lowercase() == "false" {
+                "Horizontal"
+            } else {
+                "Vertical"
+            };
+
             println!("Theme: {}", theme);
             println!("Layout: {}", layout);
         }
@@ -194,7 +195,8 @@ pub fn set_layout(layout: &str) {
         }
     };
 
-    conf.with_section(None::<String>).set("Vertical Candidate List", vertical_val);
+    conf.with_section(None::<String>)
+        .set("Vertical Candidate List", vertical_val);
 
     if let Some(parent) = conf_path.parent() {
         fs::create_dir_all(parent).unwrap_or_default();

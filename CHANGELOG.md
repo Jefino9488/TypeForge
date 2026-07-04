@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-04
+### Added
+- Integrated TypeForge Fcitx5 Themes, bundling customized high-quality themes (e.g. Catppuccin Mocha Mauve) directly into the installer.
+- Added new safe CLI configuration tools for themes and layouts (`typeforge theme apply`, `typeforge layout set`).
+- TypeForge CLI now correctly parses `classicui.conf` without overwriting other user settings.
+- Restored rock-solid Inline completion (buffer-based) dropping the async wayland emulation.
+
+### Fixed
+- Fixed layout hint logic in Fcitx5 adapter to decouple layout engine rules from TypeForge engine rules.
+
 ## [0.2.2] - 2026-07-04
 ### Fixed
 - Fixed a bug where fast-typing punctuation marks or uppercase letters would cause the entire typed word to silently vanish.

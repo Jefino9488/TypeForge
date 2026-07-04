@@ -14,16 +14,18 @@ fn setup_dummy_assets() -> (String, String, String) {
     let t_db_path = test_dir.join("telemetry.db").to_string_lossy().to_string();
 
     let mut file = File::create(&dict_path).unwrap();
-    let mut header = DictionaryHeader::default();
-    header.word_count = 10_000;
+    let mut header = DictionaryHeader {
+        word_count: 10_000,
+        ..Default::default()
+    };
 
     let mut alpha: AlphaIndex = [0; 26];
-    for i in 0..19 {
-        alpha[i] = 0; // a-s have no words
+    for item in alpha.iter_mut().take(19) {
+        *item = 0;
     }
     alpha[19] = 0; // 't' starts at index 0, all words are testword{}
-    for i in 20..26 {
-        alpha[i] = 10_000; // u-z have no words
+    for item in alpha.iter_mut().skip(20) {
+        *item = 10_000;
     }
 
     let mut entries = Vec::with_capacity(10_000);
