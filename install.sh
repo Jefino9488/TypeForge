@@ -22,6 +22,16 @@ cp typeforge-im.conf /usr/share/fcitx5/inputmethod/
 chmod 644 /usr/share/fcitx5/addon/typeforge.conf
 chmod 644 /usr/share/fcitx5/inputmethod/typeforge-im.conf
 
+echo "[2.5/5] Installing TypeForge Fcitx5 themes..."
+if [ -n "$SUDO_USER" ]; then
+    USER_HOME=$(eval echo "~$SUDO_USER")
+    mkdir -p $USER_HOME/.local/share/fcitx5/themes/
+    if [ -d "assets/themes" ]; then
+        cp -r assets/themes/* $USER_HOME/.local/share/fcitx5/themes/
+        chown -R $SUDO_USER:$SUDO_USER $USER_HOME/.local/share/fcitx5/themes/
+    fi
+fi
+
 echo "[3/4] Installing daemon..."
 mkdir -p /usr/local/bin
 killall typeforge-daemon 2>/dev/null || true
