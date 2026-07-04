@@ -71,7 +71,22 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry &,
   bool hasCtrl = static_cast<bool>(key.states() & fcitx::KeyState::Ctrl);
   bool hasAlt = static_cast<bool>(key.states() & fcitx::KeyState::Alt);
 
-  if (keyEvent.isRelease() || key.isModifier() || hasCtrl || hasAlt) {
+  if (keyEvent.isRelease()) {
+    return;
+  }
+
+  if (key.isModifier()) {
+    if (!preedit_.empty()) {
+      // Consume the modifier key press to prevent Fcitx5 from cancelling the preedit
+      keyEvent.filterAndAccept();
+    }
+    return;
+  }
+
+  if (hasCtrl || hasAlt) {
+    if (!preedit_.empty()) {
+      commitString(ic, preedit_, false);
+    }
     return;
   }
 
