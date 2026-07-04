@@ -304,7 +304,7 @@ void TypeForgeEngine::processResultQueue() {
                  << ", activeContext: " << (ic != nullptr);
     if (ic && list && list->count > 0) {
       auto candidateList = std::make_unique<fcitx::CommonCandidateList>();
-      candidateList->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
+      candidateList->setLayoutHint(fcitx::CandidateLayoutHint::NotSet);
 
       for (size_t i = 0; i < list->count; ++i) {
         if (list->predictions[i].text) {
