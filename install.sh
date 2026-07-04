@@ -25,6 +25,7 @@ chmod 644 /usr/share/fcitx5/inputmethod/typeforge-im.conf
 echo "[3/4] Installing daemon..."
 mkdir -p /usr/local/bin
 killall typeforge-daemon 2>/dev/null || true
+rm -f /usr/local/bin/typeforge-daemon
 cp typeforge-daemon /usr/local/bin/
 chmod 755 /usr/local/bin/typeforge-daemon
 
