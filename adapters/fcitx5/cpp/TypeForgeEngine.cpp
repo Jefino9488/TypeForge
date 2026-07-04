@@ -71,12 +71,18 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry &,
   bool hasCtrl = static_cast<bool>(key.states() & fcitx::KeyState::Ctrl);
   bool hasAlt = static_cast<bool>(key.states() & fcitx::KeyState::Alt);
 
+  bool is_modifier_key = key.isModifier() || 
+                         key.sym() == FcitxKey_Caps_Lock || 
+                         key.sym() == FcitxKey_Shift_L || 
+                         key.sym() == FcitxKey_Shift_R;
+
   if (keyEvent.isRelease()) {
     return;
   }
 
-  if (key.isModifier()) {
+  if (is_modifier_key) {
     if (!preedit_.empty()) {
+      FCITX_INFO() << "Ignoring modifier key " << key.sym() << " to preserve preedit: " << preedit_;
       // Consume the modifier key press to prevent Fcitx5 from cancelling the preedit
       keyEvent.filterAndAccept();
     }
@@ -85,6 +91,7 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry &,
 
   if (hasCtrl || hasAlt) {
     if (!preedit_.empty()) {
+      FCITX_INFO() << "Committing preedit due to Ctrl/Alt: " << preedit_;
       commitString(ic, preedit_, false);
     }
     return;
