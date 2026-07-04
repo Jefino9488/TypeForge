@@ -70,7 +70,6 @@ candidate_limit = 5
 
 [dictionary]
 language = "en"
-path = ""
 
 [logging]
 level = "info"

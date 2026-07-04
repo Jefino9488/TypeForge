@@ -31,6 +31,7 @@ pub mod config {
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
+    #[serde(default)]
     pub struct GeneralConfig {
         pub learning: bool,
         pub candidate_limit: usize,
@@ -46,6 +47,7 @@ pub mod config {
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
+    #[serde(default)]
     pub struct DictionaryConfig {
         pub language: String,
         pub path: String,
@@ -67,6 +69,7 @@ pub mod config {
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
+    #[serde(default)]
     pub struct LoggingConfig {
         pub level: String,
     }
@@ -80,6 +83,7 @@ pub mod config {
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
+    #[serde(default)]
     pub struct SessionConfig {
         pub memory: bool,
     }
