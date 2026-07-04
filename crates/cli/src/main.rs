@@ -7,6 +7,8 @@ use typeforge_common::config::{AppConfig, get_socket_path};
 use typeforge_protocol::{LearnRequest, PredictRequest, ProtocolMessage, Request, Response};
 use uuid::Uuid;
 
+mod theme;
+
 #[derive(Parser)]
 #[command(name = "typeforge")]
 #[command(version = "0.3.0-alpha1", about = "CLI for TypeForge daemon", long_about = None)]
@@ -34,6 +36,22 @@ enum Commands {
     },
     Doctor,
     Info,
+    Theme {
+        #[command(subcommand)]
+        action: ThemeCommand,
+    },
+    Layout {
+        #[arg(value_name = "LAYOUT")]
+        mode: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ThemeCommand {
+    List,
+    Apply { theme_name: String },
+    Current,
+    Restore,
 }
 
 #[tokio::main]
@@ -44,8 +62,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     if let Some(cmd) = cli.command {
         match cmd {
-            Commands::Doctor => run_doctor(&socket_path).await,
+            Commands::Doctor => {
+                theme::doctor_info();
+                run_doctor(&socket_path).await
+            },
             Commands::Info => run_info(&socket_path).await,
+            Commands::Theme { action } => {
+                match action {
+                    ThemeCommand::List => theme::list_themes(),
+                    ThemeCommand::Apply { theme_name } => theme::apply_theme(&theme_name),
+                    ThemeCommand::Current => theme::current_theme(),
+                    ThemeCommand::Restore => theme::restore_theme(),
+                }
+            },
+            Commands::Layout { mode } => {
+                theme::set_layout(&mode);
+            },
             Commands::Predict {
                 prefix: text_before,
             } => {
