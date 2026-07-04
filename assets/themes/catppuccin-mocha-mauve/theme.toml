@@ -1,0 +1,5 @@
+name = "Catppuccin Mocha Mauve"
+author = "justTOBBI, Isabelinc, Kurome (Tweaked by TypeForge)"
+version = "1.0"
+supports_horizontal = true
+supports_vertical = true
