@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
 use colored::*;
-use std::fs;
 use std::path::Path;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;

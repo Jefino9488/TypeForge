@@ -5,12 +5,13 @@ use std::fs::File;
 use std::io::Write;
 use typeforge_engine::engine::TypeForgeEngine;
 
-fn setup_dummy_assets() -> (String, String) {
+fn setup_dummy_assets() -> (String, String, String) {
     let test_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
     std::fs::create_dir_all(&test_dir).unwrap();
 
     let dict_path = test_dir.join("dict.csv.gz").to_string_lossy().to_string();
-    let db_path = test_dir.join("test.db").to_string_lossy().to_string();
+    let l_db_path = test_dir.join("learning.db").to_string_lossy().to_string();
+    let t_db_path = test_dir.join("telemetry.db").to_string_lossy().to_string();
 
     let file = File::create(&dict_path).unwrap();
     let mut encoder = GzEncoder::new(file, Compression::default());
@@ -20,15 +21,26 @@ fn setup_dummy_assets() -> (String, String) {
     }
     encoder.finish().unwrap();
 
-    (dict_path, db_path)
+    (dict_path, l_db_path, t_db_path)
+}
+
+fn dummy_req() -> typeforge_protocol::PredictRequest {
+    typeforge_protocol::PredictRequest {
+        text_before_cursor: "".to_string(),
+        text_after_cursor: "".to_string(),
+        cursor_position: 0,
+        application: None,
+        language: None,
+    }
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let (dict_path, db_path) = setup_dummy_assets();
-    let engine = TypeForgeEngine::new(dict_path, &db_path).unwrap();
+    let (dict_path, l_db_path, t_db_path) = setup_dummy_assets();
+    let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap();
+    let req = dummy_req();
 
     c.bench_function("predict_th", |b| {
-        b.iter(|| engine.predict(black_box("testword50"), 5))
+        b.iter(|| engine.predict(black_box("testword50"), &req, 5))
     });
 }
 
