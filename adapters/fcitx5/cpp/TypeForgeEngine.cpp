@@ -71,7 +71,7 @@ void TypeForgeEngine::keyEvent(const fcitx::InputMethodEntry &,
   bool hasCtrl = static_cast<bool>(key.states() & fcitx::KeyState::Ctrl);
   bool hasAlt = static_cast<bool>(key.states() & fcitx::KeyState::Alt);
 
-  if (keyEvent.isRelease() || hasCtrl || hasAlt) {
+  if (keyEvent.isRelease() || key.isModifier() || hasCtrl || hasAlt) {
     return;
   }
 
