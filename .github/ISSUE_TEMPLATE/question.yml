@@ -1,0 +1,16 @@
+name: Question / Help
+description: Ask a question about TypeForge
+title: "[Question]: "
+labels: ["help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues or discussions before asking a question.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with?
+    validations:
+      required: true

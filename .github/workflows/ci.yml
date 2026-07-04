@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Run Tests
+      run: cargo test --all-features
+
+  clippy:
+    name: Clippy Lints
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+        
+    - name: Run Clippy
+      run: cargo clippy -- -D warnings
+
+  build-cpp:
+    name: Build Fcitx5 Adapter
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y cmake extra-cmake-modules libfcitx5-core-dev libfcitx5-utils-dev
+      
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Build Rust Bridge
+      run: cargo build --release -p typeforge-fcitx5-bridge
+      
+    - name: Configure CMake
+      run: mkdir -p adapters/fcitx5/build && cd adapters/fcitx5/build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+      
+    - name: Build Adapter
+      run: cd adapters/fcitx5/build && make

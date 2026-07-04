@@ -1,0 +1,31 @@
+name: Performance Issue
+description: Report a latency or CPU/Memory issue
+title: "[Perf]: "
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a performance issue.
+  - type: input
+    id: latency
+    attributes:
+      label: Latency / Metric
+      description: What latency or performance metric are you seeing?
+      placeholder: ex. 150ms per keystroke
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please describe the performance issue clearly and concisely.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this performance issue?
+    validations:
+      required: true
