@@ -1,97 +1,198 @@
-# TypeForge ⚡
+<div align="center">
 
-![TypeForge Status](https://img.shields.io/badge/Status-Alpha-orange) ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+# TypeForge 
 
-> **Type smarter.**
->
-> Offline AI-ready predictive keyboard for Linux.
+[![GitHub License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Jefino9488/TypeForge/ci.yml)](https://github.com/Jefino9488/TypeForge/actions)
+[![Version](https://img.shields.io/github/v/release/Jefino9488/TypeForge)](https://github.com/Jefino9488/TypeForge/releases)
 
-Instead of writing the same variable names, commands, or email addresses repeatedly, TypeForge predicts what you want to type across **any application**—your IDE, terminal, or browser. 
+`The intelligent keyboard Linux never had.`
+
+</div>
 
 ---
 
-## 📦 Installation
+## Why TypeForge?
 
-TypeForge currently supports **Linux (Wayland & X11)** via Fcitx5.
+Linux still lacks a modern, system-wide predictive keyboard.
 
-### Pre-compiled Release (Recommended)
+TypeForge brings fast, privacy-first autocomplete to every application through a native Fcitx5 integration. It learns how you write, adapts to different applications, and runs entirely offline—your keystrokes never leave your machine.
 
-1. Download the latest release from the [Releases](https://github.com/Jefino9488/TypeForge/releases) page.
-2. Extract the archive.
-3. Run the installer:
+Whether you're writing emails, documentation, or chat messages, TypeForge helps you type less and write more.
+
+### Why I built this
+
+>Modern smartphones have predictive keyboards that learn how you write, but the Linux desktop still lacks an equivalent experience. Existing input methods focus primarily on multilingual input rather than intelligent typing assistance. TypeForge exists to bring fast, offline, privacy-first predictive typing to every Linux application while remaining fully open source.
+
+### Compared to the default Fcitx5 experience
+
+- No personal learning
+- Weak prediction models
+- No personalization
+- No context awareness
+
+---
+
+## Features:
+
+### ⚡ Fast Prediction
+
+```text
+fram
+│
+├─ FrameworkForge
+├─ framework
+└─ frame
+
+space
+↓
+
+FrameworkForge
+```
+
+### 🖥 Context Aware
+Your keyboard should know where it is typing.
+- **Firefox:** `Best reg` ➔ `Best regards,`
+- **Discord / Chat:** `Om` ➔ `On my way!`
+
+### 🔒 Privacy First
+
+- 100% offline
+- No cloud services
+- No telemetry
+- Your typing never leaves your machine
+## Comparison
+
+| Feature            | TypeForge | Default Fcitx5 |
+|--------------------|-----------|----------------|
+| **Offline**        | ✅         | ✅              |
+| **Learns locally** | ✅         | ❌              |
+| **Open Source**    | ✅         | ✅              |
+| **Context-aware**  | ✅         | ❌              |
+| **AI Ready**       | ✅         | ❌              |
+
+---
+
+## 🚀 Quick Start
+
+**Supports:**
+- Wayland
+- X11
+- Fcitx5
+
+Ensure you have Fcitx5 installed, then run:
+
 ```bash
+# Download and extract the latest release
 tar -xzf TypeForge-Linux-x86_64.tar.gz
 cd typeforge
+
+# Install TypeForge system-wide
 chmod +x install.sh
 sudo ./install.sh
 ```
 
-### 🚀 Quick Start
-
-Once installed, simply type `typeforge doctor` in your terminal to verify everything is running correctly:
+Verify everything is working and configure your theme:
 
 ```bash
-$ typeforge doctor
-Theme: catppuccin-mocha-mauve
-Layout: Horizontal
-TypeForge Doctor
-Checking system health...
+# Verify system health
+typeforge doctor
 
-✓ Daemon running
-✓ Socket found (/tmp/typeforge.sock)
-✓ Fcitx plugin installed
-✓ Config valid
-✓ Dictionary loaded (en)
-✓ Learning enabled
-```
-
-You can customize the visual appearance using the bundled themes:
-```bash
-typeforge theme list
+# Set a bundled theme and layout
 typeforge theme apply catppuccin-mocha-mauve
 typeforge layout set horizontal
 ```
 
-Open any text editor and start typing!
+---
+
+## 🛠️ Command Line Interface
+
+TypeForge comes with a powerful built-in CLI to manage your predictive engine and customize your experience.
+
+![TypeForge CLI Help](assets/screenshots/cli_help.png)
+
+### Diagnostics & Health
+Run `typeforge doctor` at any time to verify that the background daemon, socket, Fcitx5 plugin, and dictionary are all running perfectly.
+
+![TypeForge Doctor](assets/screenshots/doctor.png)
+
+### Available Commands
+- **`predict <prefix>`** - Manually test the prediction engine right in the terminal.
+- **`learn <word>`** - Force the local database to learn a specific custom word or phrase.
+- **`toggle-learning`** - Instantly pause or resume the local learning engine.
+- **`theme apply <name>`** - Apply bundled Catppuccin themes.
+- **`layout set <horizontal|vertical>`** - Change the UI orientation of the prediction popup.
 
 ---
 
-## ✨ Features
+## Vision & Roadmap
 
-- **Blazing Fast**: Written in Rust, predictions happen in under `1ms`.
-- **System-Wide**: Integrated natively into your desktop via Fcitx5 (Linux). No Electron, no clunky extensions.
-- **Beautiful Themes**: Bundled with customized Catppuccin themes to make your predictions look incredibly sleek out-of-the-box.
-- **Context-Aware**: Learns that `Vec<String>` belongs in your code editor, but `Best regards,` belongs in your email client.
-- **Spellcheck Fallback**: SymSpell integration instantly corrects typos up to 4 edit distances away.
-- **Privacy First**: Everything runs 100% locally on your machine.
-- **Diagnostics Included**: Run `typeforge doctor` or configure via `typeforge theme` instantly from the terminal.
+TypeForge isn't just another autocomplete library. It's trying to become the default intelligent keyboard for the Linux desktop.
+
+- **Today:** Word prediction
+- **Next:** Phrase prediction
+- **Then:** Sentence completion
+- **Eventually:** Optional local AI-assisted predictions
+
+### Current Progress
+
+✅ Offline prediction
+
+✅ Spell correction
+
+✅ Personal learning
+
+✅ Smart ranking
+
+🚧 Phrase prediction
+
+🚧 Tiny neural reranker
+
+⬜ Windows
+
+⬜ macOS
 
 ---
 
-## 🏗️ Architecture
+## Screenshots
 
-TypeForge is a decoupled engine designed for high performance:
-- **Daemon (`typeforge-daemon`)**: The background Rust service powering predictions and managing the local SQLite learning models.
-- **Adapter (`fcitx5-typeforge.so`)**: A lightweight C++ plugin that connects to Fcitx5 and relays keystrokes to the Daemon.
-- **CLI (`typeforge`)**: The developer and user command-line interface.
-
-Learn more in the [Architecture Overview](docs/architecture/overview.md).
+![Horizontal Prediction Popup](assets/screenshots/prediction_popup.png)
+- **Prediction popup:** Predicting "better" in a horizontal layout (Catppuccin theme).
 
 ---
 
-## 📖 Documentation
+## Architecture
 
-Dive deeper into how TypeForge works and how to configure it:
+```mermaid
+graph TD;
+    A["Any Linux Application"] -->|"Keystrokes"| B["Fcitx5 Adapter"];
+    B -->|"UDS IPC"| C["TypeForge Daemon"];
+    C -->|"Queries"| D["Prediction Pipeline"];
+    D -->|"Updates"| E[("Learning DB")];
+    D -->|"Reads"| F[("Binary Dictionary")];
+```
 
-- [Getting Started & Installation](docs/getting-started/installation.md)
-- [Configuration](docs/getting-started/configuration.md)
-- [How the Learning Engine Works](docs/architecture/learning.md)
-- [Build Instructions](docs/development/build.md)
+## Benchmarks
 
-## 🤝 Contributing
+Built in Rust for maximum performance. Because a keyboard shouldn't lag.
 
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for architecture guidelines, rules, and how to get started.
+| Metric               | Measurement |
+|----------------------|-------------|
+| **Prediction Speed** | `~2.6 μs`   |
+| **Daemon Binary**    | `< 5 MB`    |
 
-## 📜 License
+*(Prediction latency verified via Criterion benchmarks on a 10,000-word dataset.)*
 
-TypeForge is licensed under the [Apache 2.0 License](LICENSE).
+---
+
+<div align="center">
+  <b><a href="https://github.com/Jefino9488/TypeForge">⭐ Star the repository</a></b> |
+  <b><a href="https://github.com/Jefino9488/TypeForge/issues">🐛 Report bugs</a></b> |
+  <b><a href="https://github.com/Jefino9488/TypeForge/issues">💡 Suggest ideas</a></b> |
+  <b><a href="CONTRIBUTING.md">🤝 Contribute</a></b>
+  
+  <br>
+  <i>Every contribution helps make intelligent typing on Linux better.</i>
+
+  Distributed under the <a href="LICENSE">Apache 2.0 License</a>.
+</div>
