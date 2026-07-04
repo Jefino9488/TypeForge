@@ -1,3 +1,4 @@
+pub mod dict_format;
 pub mod config {
     use directories::ProjectDirs;
     use serde::{Deserialize, Serialize};
@@ -55,9 +56,9 @@ pub mod config {
 
     impl Default for DictionaryConfig {
         fn default() -> Self {
-            let dict_path = dirs::data_local_dir()
-                .map(|d| d.join("typeforge").join("dictionary.csv.gz"))
-                .unwrap_or_else(|| PathBuf::from("/usr/share/typeforge/dictionary.csv.gz"))
+            let dict_path = ProjectDirs::from("com", "typeforge", "typeforge")
+                .map(|d| d.data_dir().join("dictionary.bin"))
+                .unwrap_or_else(|| PathBuf::from("/usr/share/typeforge/dictionary.bin"))
                 .to_string_lossy()
                 .to_string();
 
@@ -113,12 +114,11 @@ pub mod config {
                 .join("typeforge")
                 .join("config.toml");
 
-            if config_path.exists() {
-                if let Ok(content) = fs::read_to_string(&config_path) {
-                    if let Ok(config) = toml::from_str(&content) {
-                        return config;
-                    }
-                }
+            if config_path.exists()
+                && let Ok(content) = fs::read_to_string(&config_path)
+                && let Ok(config) = toml::from_str(&content)
+            {
+                return config;
             }
 
             AppConfig::default()

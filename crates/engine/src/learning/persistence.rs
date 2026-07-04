@@ -98,14 +98,14 @@ impl LearningDb {
             total += freq;
         }
 
-        if let Some(ctx) = context {
-            if let Ok(ctx_freq) = conn.query_row(
+        if let Some(ctx) = context
+            && let Ok(ctx_freq) = conn.query_row(
                 "SELECT frequency FROM context_frequencies WHERE word = ?1 AND context = ?2",
                 rusqlite::params![word, ctx],
                 |row| row.get::<usize, i64>(0),
-            ) {
-                total += ctx_freq;
-            }
+            )
+        {
+            total += ctx_freq;
         }
 
         Ok(total)
@@ -133,7 +133,7 @@ impl LearningDb {
 }
 
 pub struct TelemetryDb {
-    conn: Mutex<Connection>,
+    _conn: Mutex<Connection>,
 }
 
 impl TelemetryDb {
@@ -151,7 +151,7 @@ impl TelemetryDb {
         )?;
 
         Ok(Self {
-            conn: Mutex::new(conn),
+            _conn: Mutex::new(conn),
         })
     }
 }

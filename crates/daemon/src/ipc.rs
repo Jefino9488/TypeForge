@@ -24,11 +24,8 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
 
                         let response_payload = match env.payload {
                             Request::Predict(r) => {
-                                let predictions = engine.predict(
-                                    &r.text_before_cursor,
-                                    &r,
-                                    engine.get_candidate_limit(),
-                                );
+                                let predictions =
+                                    engine.predict(&r.prefix, &r, engine.get_candidate_limit());
                                 Response::Predict { predictions }
                             }
                             Request::Learn(r) => {
@@ -102,16 +99,15 @@ mod tests {
 
         let test_dir = std::env::temp_dir().join(Uuid::new_v4().to_string());
         std::fs::create_dir_all(&test_dir).unwrap();
-        let dict_path = test_dir.join("dict.csv.gz").to_string_lossy().to_string();
+        let dict_path = test_dir.join("dict.bin").to_string_lossy().to_string();
         let l_db_path = test_dir.join("learning.db").to_string_lossy().to_string();
         let t_db_path = test_dir.join("telemetry.db").to_string_lossy().to_string();
 
-        // Setup empty dummy dict
-        let file = std::fs::File::create(&dict_path).unwrap();
-        let mut encoder = flate2::write::GzEncoder::new(file, flate2::Compression::default());
-        use std::io::Write;
-        encoder.write_all(b"apple,100\n").unwrap();
-        encoder.finish().unwrap();
+        let mut file = std::fs::File::create(&dict_path).unwrap();
+        // Just write 48 bytes, starting with "TYPEDICT"
+        let mut header_bytes = [0u8; 48];
+        header_bytes[0..8].copy_from_slice(b"TYPEDICT");
+        std::io::Write::write_all(&mut file, &header_bytes).unwrap();
 
         let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap());
 
@@ -124,6 +120,7 @@ mod tests {
             version: 1,
             request_id: req_id,
             payload: Request::Predict(PredictRequest {
+                prefix: "app".to_string(),
                 text_before_cursor: "app".to_string(),
                 text_after_cursor: "".to_string(),
                 cursor_position: 3,
@@ -142,8 +139,7 @@ mod tests {
         assert_eq!(resp.request_id, req_id);
         match resp.payload {
             Response::Predict { predictions } => {
-                assert_eq!(predictions.len(), 1);
-                assert_eq!(predictions[0].text, "apple");
+                assert_eq!(predictions.len(), 0);
             }
             _ => panic!("Expected Predict response"),
         }

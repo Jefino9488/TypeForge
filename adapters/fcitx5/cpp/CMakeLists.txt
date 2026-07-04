@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(fcitx5-typeforge VERSION 0.1.0)
+project(fcitx5-typeforge VERSION 0.2.0)
 
 find_package(ECM 1.0.0 REQUIRED)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_MODULE_PATH})

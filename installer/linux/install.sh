@@ -53,12 +53,13 @@ if [ -f "lib/fcitx5-typeforge.so" ]; then
 elif [ -f "adapters/fcitx5/build/fcitx5-typeforge.so" ]; then
     cp adapters/fcitx5/build/fcitx5-typeforge.so "$LIB_DIR/"
     cp adapters/fcitx5/build/typeforge.conf "$ADDON_DIR/"
+    sed -i "s|Library=.*|Library=$LIB_DIR/fcitx5-typeforge|" "$ADDON_DIR/typeforge.conf"
     cp adapters/fcitx5/build/typeforge-im.conf "$ADDON_DIR/"
 fi
 
 echo "Copying assets..."
-if [ -f "assets/dictionary-v1.csv.gz" ]; then
-    cp assets/dictionary-v1.csv.gz "$DATA_DIR/dictionary.csv.gz"
+if [ -f "assets/dictionary.bin" ]; then
+    cp assets/dictionary.bin "$DATA_DIR/dictionary.bin"
 fi
 
 echo "Setting up configuration..."

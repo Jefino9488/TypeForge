@@ -10,6 +10,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <fcitx-utils/event.h>
 
 extern "C" {
     struct C_Prediction {
@@ -26,8 +28,8 @@ extern "C" {
 
     typedef void (*PredictCallback)(C_PredictionList* list, void* user_data);
 
-    void typeforge_predict_async(const char* prefix, const char* application, uint64_t generation, PredictCallback callback, void* user_data);
-    C_PredictionList* typeforge_predict_sync(const char* prefix, const char* application);
+    void typeforge_predict_async(const char* prefix, const char* surrounding_text, const char* application, uint64_t generation, PredictCallback callback, void* user_data);
+    C_PredictionList* typeforge_predict_sync(const char* prefix, const char* surrounding_text, const char* application);
     void typeforge_free_prediction_list(C_PredictionList* list);
     void typeforge_learn(const char* word, int64_t delta, const char* application);
 }
@@ -55,6 +57,15 @@ private:
     fcitx::InputContext* active_ic_ = nullptr;
     std::string preedit_;
     uint64_t current_generation_ = 0;
+    bool suggestion_explicitly_selected_ = false;
+
+    // Cross-thread communication
+    int pipe_fd_[2];
+    std::unique_ptr<fcitx::EventSourceIO> io_event_;
+    std::mutex queue_mutex_;
+    std::vector<C_PredictionList*> result_queue_;
+
+    void processResultQueue();
 };
 
 class TypeForgeEngineFactory : public fcitx::AddonFactory {

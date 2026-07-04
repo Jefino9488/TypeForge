@@ -19,6 +19,7 @@ pub enum Request {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PredictRequest {
+    pub prefix: String,
     pub text_before_cursor: String,
     pub text_after_cursor: String,
     pub cursor_position: usize,
@@ -67,6 +68,7 @@ mod tests {
             version: 1,
             request_id: req_id,
             payload: Request::Predict(PredictRequest {
+                prefix: "he".to_string(),
                 text_before_cursor: "he".to_string(),
                 text_after_cursor: "".to_string(),
                 cursor_position: 2,

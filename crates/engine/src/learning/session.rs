@@ -7,6 +7,12 @@ pub struct SessionMemory {
     recent_words: RwLock<VecDeque<String>>,
 }
 
+impl Default for SessionMemory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SessionMemory {
     pub fn new() -> Self {
         Self {

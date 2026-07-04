@@ -48,6 +48,7 @@ Open any text editor and start typing!
 - **Blazing Fast**: Written in Rust, predictions happen in under `1ms`.
 - **System-Wide**: Integrated natively into your desktop via Fcitx5 (Linux). No Electron, no clunky extensions.
 - **Context-Aware**: Learns that `Vec<String>` belongs in your code editor, but `Best regards,` belongs in your email client.
+- **Spellcheck Fallback**: SymSpell integration instantly corrects typos up to 4 edit distances away.
 - **Privacy First**: Everything runs 100% locally on your machine.
 - **Diagnostics Included**: Run `typeforge doctor` or `typeforge info` instantly to troubleshoot.
 

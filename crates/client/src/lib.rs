@@ -22,6 +22,7 @@ impl TypeForgeClient {
     pub fn predict(
         &self,
         prefix: &str,
+        context: Option<&str>,
         limit: usize,
         app: Option<String>,
     ) -> Result<Vec<Prediction>, String> {
@@ -35,12 +36,19 @@ impl TypeForgeClient {
             .set_write_timeout(Some(Duration::from_millis(50)))
             .map_err(|e| e.to_string())?;
 
+        let text_before_cursor = if let Some(ctx) = context {
+            format!("{}{}", ctx, prefix)
+        } else {
+            prefix.to_string()
+        };
+
         let req_id = Uuid::new_v4();
         let msg = ProtocolMessage {
             version: 1,
             request_id: req_id,
             payload: Request::Predict(PredictRequest {
-                text_before_cursor: prefix.to_string(),
+                prefix: prefix.to_string(),
+                text_before_cursor,
                 text_after_cursor: String::new(),
                 cursor_position: unicode_segmentation::UnicodeSegmentation::graphemes(prefix, true)
                     .count(),

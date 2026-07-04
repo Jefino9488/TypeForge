@@ -46,12 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         match cmd {
             Commands::Doctor => run_doctor(&socket_path).await,
             Commands::Info => run_info(&socket_path).await,
-            Commands::Predict { prefix } => {
+            Commands::Predict {
+                prefix: text_before,
+            } => {
                 send_request(
                     &socket_path,
                     Request::Predict(PredictRequest {
-                        text_before_cursor: prefix,
-                        text_after_cursor: "".to_string(),
+                        prefix: text_before.clone(),
+                        text_before_cursor: text_before,
+                        text_after_cursor: String::new(),
                         cursor_position: 0,
                         application: None,
                         language: None,
@@ -131,10 +134,10 @@ async fn run_doctor(socket_path: &str) {
 
     if sys_plugin.exists() {
         fcitx_installed = true;
-    } else if let Some(local_path) = local_plugin {
-        if local_path.exists() {
-            fcitx_installed = true;
-        }
+    } else if let Some(local_path) = local_plugin
+        && local_path.exists()
+    {
+        fcitx_installed = true;
     }
 
     if fcitx_installed {

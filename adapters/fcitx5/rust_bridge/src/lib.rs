@@ -37,6 +37,7 @@ pub type PredictCallback = extern "C" fn(*mut C_PredictionList, *mut libc::c_voi
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn typeforge_predict_async(
     prefix: *const c_char,
+    surrounding_text: *const c_char,
     application: *const c_char,
     generation: u64,
     callback: PredictCallback,
@@ -50,6 +51,17 @@ pub extern "C" fn typeforge_predict_async(
         match CStr::from_ptr(prefix).to_str() {
             Ok(s) => s.to_string(),
             Err(_) => return,
+        }
+    };
+
+    let surrounding_str = if surrounding_text.is_null() {
+        String::new()
+    } else {
+        unsafe {
+            CStr::from_ptr(surrounding_text)
+                .to_str()
+                .unwrap_or("")
+                .to_string()
         }
     };
 
@@ -71,12 +83,12 @@ pub extern "C" fn typeforge_predict_async(
     let callback_ptr = callback as usize;
     let user_data_ptr = user_data as usize;
 
-    // Use a single tokio runtime for background work
     get_runtime().spawn_blocking(move || {
         let callback_fn: PredictCallback = unsafe { std::mem::transmute(callback_ptr) };
         let user_data_raw = user_data_ptr as *mut libc::c_void;
+
         let client = TypeForgeClient::new();
-        let result = client.predict(&prefix_str, 5, application_str);
+        let result = client.predict(&prefix_str, Some(&surrounding_str), 5, application_str);
 
         let mut c_preds = Vec::new();
         if let Ok(predictions) = result {
@@ -124,16 +136,28 @@ pub extern "C" fn typeforge_predict_async(
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn typeforge_predict_sync(
     prefix: *const c_char,
+    surrounding_text: *const c_char,
     application: *const c_char,
 ) -> *mut C_PredictionList {
     if prefix.is_null() {
-        return ptr::null_mut();
+        return std::ptr::null_mut();
     }
 
     let prefix_str = unsafe {
         match CStr::from_ptr(prefix).to_str() {
             Ok(s) => s.to_string(),
-            Err(_) => return ptr::null_mut(),
+            Err(_) => return std::ptr::null_mut(),
+        }
+    };
+
+    let surrounding_str = if surrounding_text.is_null() {
+        String::new()
+    } else {
+        unsafe {
+            CStr::from_ptr(surrounding_text)
+                .to_str()
+                .unwrap_or("")
+                .to_string()
         }
     };
 
@@ -148,12 +172,8 @@ pub extern "C" fn typeforge_predict_sync(
         }
     };
 
-    if prefix_str.is_empty() {
-        return ptr::null_mut();
-    }
-
     let client = TypeForgeClient::new();
-    let result = client.predict(&prefix_str, 5, application_str);
+    let result = client.predict(&prefix_str, Some(&surrounding_str), 5, application_str);
 
     let mut c_preds = Vec::new();
     if let Ok(predictions) = result {

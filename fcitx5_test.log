@@ -1,0 +1,37 @@
+I2026-07-04 14:24:16.843056 instance.cpp:1440] Override Enabled Addons: {}
+I2026-07-04 14:24:16.845181 instance.cpp:1441] Override Disabled Addons: {}
+I2026-07-04 14:24:16.846953 addonmanager.cpp:204] Loaded addon wayland
+I2026-07-04 14:24:16.847050 addonmanager.cpp:204] Loaded addon imselector
+I2026-07-04 14:24:16.848331 xcbconnection.cpp:198] Connecting to X11 display, display name::1.
+I2026-07-04 14:24:16.848349 xcbconnection.cpp:203] X11 display: :1 is xwayland.
+I2026-07-04 14:24:16.848381 addonmanager.cpp:204] Loaded addon xcb
+I2026-07-04 14:24:16.849172 addonmanager.cpp:204] Loaded addon quickphrase
+I2026-07-04 14:24:16.849285 addonmanager.cpp:204] Loaded addon waylandim
+I2026-07-04 14:24:16.849832 keyboard.cpp:229] Attempting to load keyboard from: ["/usr/share/xkeyboard-config-2"] Rule: evdev
+I2026-07-04 14:24:16.852344 addonmanager.cpp:204] Loaded addon keyboard
+I2026-07-04 14:24:16.852562 addonmanager.cpp:204] Loaded addon clipboard
+I2026-07-04 14:24:16.852640 addonmanager.cpp:204] Loaded addon unicode
+I2026-07-04 14:24:16.853106 addonmanager.cpp:204] Loaded addon dbus
+I2026-07-04 14:24:16.853350 addonmanager.cpp:204] Loaded addon dbusfrontend
+I2026-07-04 14:24:16.856655 addonmanager.cpp:204] Loaded addon fcitx4frontend
+I2026-07-04 14:24:16.857013 addonmanager.cpp:204] Loaded addon ibusfrontend
+I2026-07-04 14:24:16.857432 addonmanager.cpp:204] Loaded addon xim
+I2026-07-04 14:24:16.872999 inputmethodmanager.cpp:210] Found 753 input method(s) in addon keyboard
+I2026-07-04 14:24:16.883267 addonmanager.cpp:204] Loaded addon kimpanel
+I2026-07-04 14:24:16.883375 addonmanager.cpp:204] Loaded addon virtualkeyboard
+I2026-07-04 14:24:16.894114 classicui.cpp:89] Created classicui for x11 display::1
+I2026-07-04 14:24:16.894139 classicui.cpp:110] Created classicui for wayland display:
+I2026-07-04 14:24:16.894146 addonmanager.cpp:204] Loaded addon classicui
+I2026-07-04 14:24:16.894318 addonmanager.cpp:204] Loaded addon notificationitem
+I2026-07-04 14:24:16.894463 addonmanager.cpp:204] Loaded addon notifications
+I2026-07-04 14:24:16.898147 dbusmodule.cpp:845] Service name change: org.fcitx.Fcitx5  :1.269
+I2026-07-04 14:24:16.898878 kimpanel.cpp:138] Kimpanel new owner: 
+I2026-07-04 14:24:16.898900 virtualkeyboard.cpp:230] VirtualKeyboard new owner: 
+I2026-07-04 14:24:16.898918 portalsettingmonitor.cpp:97] A new portal show up, start a new query.
+I2026-07-04 14:24:16.898962 portalsettingmonitor.cpp:97] A new portal show up, start a new query.
+I2026-07-04 14:24:16.932251 addonmanager.cpp:204] Loaded addon typeforge
+I2026-07-04 14:24:18.516438 TypeForgeEngine.cpp:58] Requesting prediction for: e surrounding:  generation 2
+=========================
+Fcitx 5.1.21 -- Get Signal No.: 11
+Date: try "date -d @1783155258" if you are using GNU date ***
+ProcessID: 72874

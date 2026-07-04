@@ -2,7 +2,7 @@
 Name=TypeForge
 Category=InputMethod
 Version=0.1.0
-Library=@FCITX_INSTALL_ADDONDIR@/fcitx5-typeforge
+Library=fcitx5-typeforge
 Type=SharedLibrary
 OnDemand=True
 Configurable=False

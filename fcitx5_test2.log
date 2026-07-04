@@ -1,0 +1,413 @@
+I2026-07-04 14:27:45.852649 instance.cpp:1440] Override Enabled Addons: {}
+I2026-07-04 14:27:45.854778 instance.cpp:1441] Override Disabled Addons: {}
+I2026-07-04 14:27:45.856565 addonmanager.cpp:204] Loaded addon wayland
+I2026-07-04 14:27:45.856685 addonmanager.cpp:204] Loaded addon imselector
+I2026-07-04 14:27:45.858005 xcbconnection.cpp:198] Connecting to X11 display, display name::1.
+I2026-07-04 14:27:45.858023 xcbconnection.cpp:203] X11 display: :1 is xwayland.
+I2026-07-04 14:27:45.858062 addonmanager.cpp:204] Loaded addon xcb
+I2026-07-04 14:27:45.858892 addonmanager.cpp:204] Loaded addon quickphrase
+I2026-07-04 14:27:45.859011 addonmanager.cpp:204] Loaded addon waylandim
+I2026-07-04 14:27:45.859564 keyboard.cpp:229] Attempting to load keyboard from: ["/usr/share/xkeyboard-config-2"] Rule: evdev
+I2026-07-04 14:27:45.862188 addonmanager.cpp:204] Loaded addon keyboard
+I2026-07-04 14:27:45.862417 addonmanager.cpp:204] Loaded addon clipboard
+I2026-07-04 14:27:45.862502 addonmanager.cpp:204] Loaded addon unicode
+I2026-07-04 14:27:45.863132 addonmanager.cpp:204] Loaded addon dbus
+I2026-07-04 14:27:45.863407 addonmanager.cpp:204] Loaded addon dbusfrontend
+I2026-07-04 14:27:45.867759 addonmanager.cpp:204] Loaded addon fcitx4frontend
+I2026-07-04 14:27:45.868085 addonmanager.cpp:204] Loaded addon ibusfrontend
+E2026-07-04 14:27:45.868367 xim.cpp:179] Failed to open xim, retrying.
+I2026-07-04 14:27:46.868748 addonmanager.cpp:204] Loaded addon xim
+I2026-07-04 14:27:46.895178 inputmethodmanager.cpp:210] Found 753 input method(s) in addon keyboard
+I2026-07-04 14:27:46.907608 addonmanager.cpp:204] Loaded addon kimpanel
+I2026-07-04 14:27:46.907735 addonmanager.cpp:204] Loaded addon virtualkeyboard
+I2026-07-04 14:27:46.918849 classicui.cpp:89] Created classicui for x11 display::1
+I2026-07-04 14:27:46.918879 classicui.cpp:110] Created classicui for wayland display:
+I2026-07-04 14:27:46.918886 addonmanager.cpp:204] Loaded addon classicui
+I2026-07-04 14:27:46.919083 addonmanager.cpp:204] Loaded addon notificationitem
+I2026-07-04 14:27:46.919286 addonmanager.cpp:204] Loaded addon notifications
+I2026-07-04 14:27:46.923177 dbusmodule.cpp:845] Service name change: org.fcitx.Fcitx5  :1.294
+I2026-07-04 14:27:46.923759 kimpanel.cpp:138] Kimpanel new owner: 
+I2026-07-04 14:27:46.923784 virtualkeyboard.cpp:230] VirtualKeyboard new owner: 
+I2026-07-04 14:27:46.923796 portalsettingmonitor.cpp:97] A new portal show up, start a new query.
+I2026-07-04 14:27:46.923844 portalsettingmonitor.cpp:97] A new portal show up, start a new query.
+I2026-07-04 14:27:46.925540 addonmanager.cpp:204] Loaded addon typeforge
+I2026-07-04 14:27:47.137441 TypeForgeEngine.cpp:58] Requesting prediction for: r surrounding:  generation 1
+I2026-07-04 14:27:47.140420 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:27:47.171086 TypeForgeEngine.cpp:58] Requesting prediction for: ri surrounding:  generation 2
+I2026-07-04 14:27:47.173107 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:27:47.177017 TypeForgeEngine.cpp:58] Requesting prediction for: rib surrounding: ​
+
+ generation 3
+I2026-07-04 14:27:47.177377 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:47.242209 TypeForgeEngine.cpp:58] Requesting prediction for: ribs surrounding: ​
+
+ generation 4
+I2026-07-04 14:27:47.243017 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:47.335186 TypeForgeEngine.cpp:58] Requesting prediction for: ribsv surrounding: ​
+
+ generation 5
+I2026-07-04 14:27:47.336134 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:48.200310 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:48.447547 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:48.475490 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:48.504092 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:48.977445 TypeForgeEngine.cpp:58] Requesting prediction for: j surrounding: ​
+
+ generation 11
+I2026-07-04 14:27:48.977918 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:49.078154 TypeForgeEngine.cpp:58] Requesting prediction for: jv surrounding: 
+ generation 12
+I2026-07-04 14:27:49.078812 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:49.310165 TypeForgeEngine.cpp:58] Requesting prediction for: jvj surrounding: ​
+
+ generation 13
+I2026-07-04 14:27:49.310792 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:49.677817 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:49.924748 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:27:57.076625 waylandmodule.cpp:665] Wayland self diagnose information
+I2026-07-04 14:27:57.076686 waylandmodule.cpp:666] Using Wayland native input method protocol: 1
+I2026-07-04 14:27:57.076695 waylandmodule.cpp:668] Toolkit specific environment variable detected by process:
+I2026-07-04 14:27:57.076700 waylandmodule.cpp:670] GTK_IM_MODULE=
+I2026-07-04 14:27:57.076705 waylandmodule.cpp:671] QT_IM_MODULE=fcitx
+I2026-07-04 14:27:57.076710 waylandmodule.cpp:672] QT_IM_MODULES=
+I2026-07-04 14:28:17.890839 TypeForgeEngine.cpp:58] Requesting prediction for: i surrounding:  generation 19
+I2026-07-04 14:28:17.892130 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:28:17.900531 TypeForgeEngine.cpp:58] Requesting prediction for: iu surrounding: 
+ generation 20
+I2026-07-04 14:28:17.900711 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:18.000657 TypeForgeEngine.cpp:58] Requesting prediction for: iuc surrounding: 
+ generation 21
+I2026-07-04 14:28:18.001027 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:18.475525 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:18.722602 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:40.417662 TypeForgeEngine.cpp:58] Requesting prediction for: h surrounding:  generation 26
+I2026-07-04 14:28:40.420047 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:28:40.518137 TypeForgeEngine.cpp:58] Requesting prediction for: hw surrounding: 
+ generation 27
+I2026-07-04 14:28:40.518409 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:41.206059 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:42.727022 TypeForgeEngine.cpp:58] Requesting prediction for: h surrounding: ​
+
+ generation 30
+I2026-07-04 14:28:42.727704 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:42.974074 TypeForgeEngine.cpp:58] Requesting prediction for: hh surrounding: 
+ generation 31
+I2026-07-04 14:28:42.975024 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.002659 TypeForgeEngine.cpp:58] Requesting prediction for: hhh surrounding: ​
+
+ generation 32
+I2026-07-04 14:28:43.003140 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.251374 TypeForgeEngine.cpp:58] Requesting prediction for: hhhh surrounding: ​
+
+ generation 33
+I2026-07-04 14:28:43.252064 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.583434 TypeForgeEngine.cpp:58] Requesting prediction for: hhhha surrounding: ​
+
+ generation 34
+I2026-07-04 14:28:43.584060 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.610424 TypeForgeEngine.cpp:58] Requesting prediction for: hhhhae surrounding: ​
+
+ generation 35
+I2026-07-04 14:28:43.611174 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.615286 TypeForgeEngine.cpp:58] Requesting prediction for: hhhhaew surrounding: ​
+
+ generation 36
+I2026-07-04 14:28:43.615616 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:43.848387 TypeForgeEngine.cpp:58] Requesting prediction for: hhhhaewb surrounding: ​
+
+ generation 37
+I2026-07-04 14:28:43.849153 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.317879 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.565203 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.593477 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.621916 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.650599 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.679209 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:44.707756 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:45.517423 TypeForgeEngine.cpp:58] Requesting prediction for: j surrounding: ​
+
+ generation 46
+I2026-07-04 14:28:45.518104 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:49.366503 TypeForgeEngine.cpp:58] Requesting prediction for: j surrounding: ​
+
+ generation 48
+I2026-07-04 14:28:49.367119 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:28:50.795954 TypeForgeEngine.cpp:58] Requesting prediction for: h surrounding: ​
+
+ generation 50
+I2026-07-04 14:28:50.796644 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:43.907353 TypeForgeEngine.cpp:58] Requesting prediction for: c surrounding:  generation 56
+I2026-07-04 14:29:43.911186 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:29:44.040645 TypeForgeEngine.cpp:58] Requesting prediction for: co surrounding: 
+ generation 57
+I2026-07-04 14:29:44.041374 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:44.259017 TypeForgeEngine.cpp:58] Requesting prediction for: con surrounding: ​
+
+ generation 58
+I2026-07-04 14:29:44.263033 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:45.679840 TypeForgeEngine.cpp:58] Requesting prediction for: cont surrounding: ​
+
+ generation 59
+I2026-07-04 14:29:45.685897 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:45.786729 TypeForgeEngine.cpp:58] Requesting prediction for: conti surrounding: ​
+
+ generation 60
+I2026-07-04 14:29:45.787542 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:46.152762 TypeForgeEngine.cpp:58] Requesting prediction for: contin surrounding: ​
+
+ generation 61
+I2026-07-04 14:29:46.153719 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:46.518672 TypeForgeEngine.cpp:58] Requesting prediction for: continu surrounding: ​
+
+ generation 62
+I2026-07-04 14:29:46.522237 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:46.640652 TypeForgeEngine.cpp:58] Requesting prediction for: continue surrounding: ​
+
+ generation 63
+I2026-07-04 14:29:46.641534 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:29:47.767946 TypeForgeEngine.cpp:197] Committing string: 'continue'
+I2026-07-04 14:30:01.301473 TypeForgeEngine.cpp:58] Requesting prediction for: h surrounding: ​
+
+ generation 65
+I2026-07-04 14:30:01.302147 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:22.356582 TypeForgeEngine.cpp:58] Requesting prediction for: f surrounding:  generation 68
+I2026-07-04 14:30:22.359457 TypeForgeEngine.cpp:228] Predictions ready, count: 5, activeContext: 1
+I2026-07-04 14:30:22.692363 TypeForgeEngine.cpp:58] Requesting prediction for: fe surrounding: 
+ generation 69
+I2026-07-04 14:30:22.692959 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:23.788391 TypeForgeEngine.cpp:58] Requesting prediction for: fee surrounding: ​
+
+ generation 70
+I2026-07-04 14:30:23.788988 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:24.843014 TypeForgeEngine.cpp:58] Requesting prediction for: feel surrounding: ​
+
+ generation 71
+I2026-07-04 14:30:24.843554 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:25.034230 TypeForgeEngine.cpp:58] Requesting prediction for: feels surrounding: ​
+
+ generation 72
+I2026-07-04 14:30:25.034844 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:25.186614 TypeForgeEngine.cpp:197] Committing string: 'feels'
+I2026-07-04 14:30:25.413784 TypeForgeEngine.cpp:58] Requesting prediction for: l surrounding: ​
+
+ generation 74
+I2026-07-04 14:30:25.415233 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:25.695257 TypeForgeEngine.cpp:58] Requesting prediction for: lo surrounding: feels 
+
+ generation 75
+I2026-07-04 14:30:25.695998 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:26.256060 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:27.239287 TypeForgeEngine.cpp:58] Requesting prediction for: li surrounding: feels ​
+
+ generation 77
+I2026-07-04 14:30:27.239931 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:27.757979 TypeForgeEngine.cpp:58] Requesting prediction for: lik surrounding: feels ​
+
+ generation 78
+I2026-07-04 14:30:27.758668 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:27.918144 TypeForgeEngine.cpp:58] Requesting prediction for: like surrounding: feels ​
+
+ generation 79
+I2026-07-04 14:30:27.918906 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:28.093418 TypeForgeEngine.cpp:197] Committing string: 'like'
+I2026-07-04 14:30:29.110095 TypeForgeEngine.cpp:58] Requesting prediction for: o surrounding: feels ​
+
+ generation 81
+I2026-07-04 14:30:29.110665 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:29.369983 TypeForgeEngine.cpp:58] Requesting prediction for: on surrounding: feels like 
+
+ generation 82
+I2026-07-04 14:30:29.370335 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:29.636124 TypeForgeEngine.cpp:58] Requesting prediction for: onl surrounding: feels like ​
+
+ generation 83
+I2026-07-04 14:30:29.636908 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:30.276287 TypeForgeEngine.cpp:58] Requesting prediction for: only surrounding: feels like ​
+
+ generation 84
+I2026-07-04 14:30:30.276940 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:30.575649 TypeForgeEngine.cpp:197] Committing string: 'only'
+I2026-07-04 14:30:31.128352 TypeForgeEngine.cpp:58] Requesting prediction for: w surrounding: feels like ​
+
+ generation 86
+I2026-07-04 14:30:31.129139 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:31.308206 TypeForgeEngine.cpp:58] Requesting prediction for: wo surrounding: feels like only 
+
+ generation 87
+I2026-07-04 14:30:31.308968 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:31.507339 TypeForgeEngine.cpp:58] Requesting prediction for: wor surrounding: feels like only ​
+
+ generation 88
+I2026-07-04 14:30:31.508142 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:31.731236 TypeForgeEngine.cpp:58] Requesting prediction for: work surrounding: feels like only ​
+
+ generation 89
+I2026-07-04 14:30:31.731865 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:31.939347 TypeForgeEngine.cpp:58] Requesting prediction for: works surrounding: feels like only ​
+
+ generation 90
+I2026-07-04 14:30:31.939854 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:32.124592 TypeForgeEngine.cpp:197] Committing string: 'works'
+I2026-07-04 14:30:32.354233 TypeForgeEngine.cpp:58] Requesting prediction for: o surrounding: feels like only ​
+
+ generation 92
+I2026-07-04 14:30:32.354883 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:32.561253 TypeForgeEngine.cpp:58] Requesting prediction for: on surrounding: feels like only works 
+
+ generation 93
+I2026-07-04 14:30:32.562004 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:32.776711 TypeForgeEngine.cpp:197] Committing string: 'on'
+I2026-07-04 14:30:33.364998 TypeForgeEngine.cpp:58] Requesting prediction for: f surrounding: feels like only works ​
+
+ generation 95
+I2026-07-04 14:30:33.365565 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:33.522191 TypeForgeEngine.cpp:58] Requesting prediction for: fi surrounding: feels like only works on 
+
+ generation 96
+I2026-07-04 14:30:33.522718 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:33.903237 TypeForgeEngine.cpp:58] Requesting prediction for: fir surrounding: feels like only works on ​
+
+ generation 97
+I2026-07-04 14:30:33.903826 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:34.216136 TypeForgeEngine.cpp:58] Requesting prediction for: firs surrounding: feels like only works on ​
+
+ generation 98
+I2026-07-04 14:30:34.216952 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:34.602267 TypeForgeEngine.cpp:58] Requesting prediction for: first surrounding: feels like only works on ​
+
+ generation 99
+I2026-07-04 14:30:34.602779 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:34.745621 TypeForgeEngine.cpp:197] Committing string: 'first'
+I2026-07-04 14:30:34.987137 TypeForgeEngine.cpp:58] Requesting prediction for: l surrounding: feels like only works on ​
+
+ generation 101
+I2026-07-04 14:30:34.987840 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:35.144303 TypeForgeEngine.cpp:58] Requesting prediction for: le surrounding: feels like only works on first 
+
+ generation 102
+I2026-07-04 14:30:35.144927 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:35.511164 TypeForgeEngine.cpp:58] Requesting prediction for: let surrounding: feels like only works on first ​
+
+ generation 103
+I2026-07-04 14:30:35.511943 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:35.704978 TypeForgeEngine.cpp:58] Requesting prediction for: lett surrounding: feels like only works on first ​
+
+ generation 104
+I2026-07-04 14:30:35.705440 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:35.961108 TypeForgeEngine.cpp:58] Requesting prediction for: lette surrounding: feels like only works on first ​
+
+ generation 105
+I2026-07-04 14:30:35.961835 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:36.207175 TypeForgeEngine.cpp:58] Requesting prediction for: letter surrounding: feels like only works on first ​
+
+ generation 106
+I2026-07-04 14:30:36.207860 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:36.392677 TypeForgeEngine.cpp:197] Committing string: 'letter'
+I2026-07-04 14:30:37.525091 TypeForgeEngine.cpp:58] Requesting prediction for: i surrounding: feels like only works on first ​
+
+ generation 108
+I2026-07-04 14:30:37.525850 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:37.784086 TypeForgeEngine.cpp:58] Requesting prediction for: it surrounding: feels like only works on first letter 
+
+ generation 109
+I2026-07-04 14:30:37.784549 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:38.174206 TypeForgeEngine.cpp:58] Requesting prediction for: its surrounding: feels like only works on first letter ​
+
+ generation 110
+I2026-07-04 14:30:38.174763 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:38.373299 TypeForgeEngine.cpp:197] Committing string: 'its'
+I2026-07-04 14:30:38.598053 TypeForgeEngine.cpp:58] Requesting prediction for: n surrounding: feels like only works on first letter ​
+
+ generation 112
+I2026-07-04 14:30:38.598537 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:38.785125 TypeForgeEngine.cpp:58] Requesting prediction for: no surrounding: feels like only works on first letter its 
+
+ generation 113
+I2026-07-04 14:30:38.785632 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:38.992146 TypeForgeEngine.cpp:58] Requesting prediction for: not surrounding: feels like only works on first letter its ​
+
+ generation 114
+I2026-07-04 14:30:38.992774 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:39.145510 TypeForgeEngine.cpp:197] Committing string: 'not'
+I2026-07-04 14:30:40.419077 TypeForgeEngine.cpp:58] Requesting prediction for: s surrounding: feels like only works on first letter its ​
+
+ generation 116
+I2026-07-04 14:30:40.420039 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:40.567083 TypeForgeEngine.cpp:58] Requesting prediction for: sy surrounding: feels like only works on first letter its not 
+
+ generation 117
+I2026-07-04 14:30:40.567802 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:41.197144 TypeForgeEngine.cpp:58] Requesting prediction for: syn surrounding: feels like only works on first letter its not ​
+
+ generation 118
+I2026-07-04 14:30:41.198019 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:41.465093 TypeForgeEngine.cpp:58] Requesting prediction for: sync surrounding: feels like only works on first letter its not ​
+
+ generation 119
+I2026-07-04 14:30:41.465690 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:41.734037 TypeForgeEngine.cpp:58] Requesting prediction for: synci surrounding: feels like only works on first letter its not ​
+
+ generation 120
+I2026-07-04 14:30:41.734550 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:41.972035 TypeForgeEngine.cpp:58] Requesting prediction for: syncin surrounding: feels like only works on first letter its not ​
+
+ generation 121
+I2026-07-04 14:30:41.972515 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:42.115420 TypeForgeEngine.cpp:58] Requesting prediction for: syncing surrounding: feels like only works on first letter its not ​
+
+ generation 122
+I2026-07-04 14:30:42.116113 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:42.246812 TypeForgeEngine.cpp:197] Committing string: 'syncing'
+I2026-07-04 14:30:42.481042 TypeForgeEngine.cpp:58] Requesting prediction for: o surrounding: feels like only works on first letter its not ​
+
+ generation 124
+I2026-07-04 14:30:42.481740 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:42.662135 TypeForgeEngine.cpp:58] Requesting prediction for: or surrounding: feels like only works on first letter its not syncing 
+
+ generation 125
+I2026-07-04 14:30:42.663029 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:42.822638 TypeForgeEngine.cpp:197] Committing string: 'or'
+I2026-07-04 14:30:43.040737 TypeForgeEngine.cpp:58] Requesting prediction for: s surrounding: feels like only works on first letter its not syncing ​
+
+ generation 127
+I2026-07-04 14:30:43.041537 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:43.589093 TypeForgeEngine.cpp:58] Requesting prediction for: st surrounding: feels like only works on first letter its not syncing or 
+
+ generation 128
+I2026-07-04 14:30:43.589927 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:44.136147 TypeForgeEngine.cpp:58] Requesting prediction for: str surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 129
+I2026-07-04 14:30:44.136781 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:44.383288 TypeForgeEngine.cpp:58] Requesting prediction for: stre surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 130
+I2026-07-04 14:30:44.383915 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:44.724074 TypeForgeEngine.cpp:58] Requesting prediction for: strea surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 131
+I2026-07-04 14:30:44.724745 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:44.990073 TypeForgeEngine.cpp:58] Requesting prediction for: stream surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 132
+I2026-07-04 14:30:44.990736 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:45.232788 TypeForgeEngine.cpp:58] Requesting prediction for: streami surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 133
+I2026-07-04 14:30:45.233247 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:45.458082 TypeForgeEngine.cpp:58] Requesting prediction for: streamin surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 134
+I2026-07-04 14:30:45.458631 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:45.667089 TypeForgeEngine.cpp:58] Requesting prediction for: streaming surrounding: feels like only works on first letter its not syncing or ​
+
+ generation 135
+I2026-07-04 14:30:45.667800 TypeForgeEngine.cpp:228] Predictions ready, count: 0, activeContext: 1
+I2026-07-04 14:30:45.836937 TypeForgeEngine.cpp:197] Committing string: 'streaming'
+I2026-07-04 14:32:43.597745 dbusmodule.cpp:845] Service name change: org.fcitx.Fcitx5 :1.294 :1.303
+=========================
+Fcitx 5.1.21 -- Get Signal No.: 11
+Date: try "date -d @1783155763" if you are using GNU date ***
+ProcessID: 74609
+fcitx5(+0x1aa6a) [0x564e2c0a8a6a]
+/usr/lib/libc.so.6(+0x448f0) [0x7f850a0448f0]

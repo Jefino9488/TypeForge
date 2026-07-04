@@ -20,7 +20,7 @@ impl ScorePipeline {
         }
     }
 
-    pub fn rank(&self, candidates: &mut Vec<Prediction>, ctx: &ScoreContext) {
+    pub fn rank(&self, candidates: &mut [Prediction], ctx: &ScoreContext) {
         for candidate in candidates.iter_mut() {
             let mut score = candidate.score;
 
