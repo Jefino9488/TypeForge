@@ -7,6 +7,9 @@ pub mod session;
 
 pub use learner::{Learner, LearningConfig};
 pub use persistence::{LearningDb, TelemetryDb};
-pub use pipeline::{CommitEvent, LearningPipeline, NGramLearner, SessionLearner, WordLearner};
+pub use pipeline::{
+    CommitEvent, CooldownStage, LearningPipeline, NGramLearner, SessionLearner, SpamFilterStage,
+    WordLearner,
+};
 pub use scorer::{ScoreContext, ScorePipeline};
 pub use session::SessionMemory;

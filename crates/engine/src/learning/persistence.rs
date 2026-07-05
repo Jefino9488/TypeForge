@@ -2,7 +2,6 @@ use rusqlite::Connection;
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::{Mutex, RwLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct NGramKey {
@@ -15,8 +14,21 @@ pub struct NGramEntry {
     pub frequency: u32,
 }
 
+pub enum DbUpdate {
+    Word {
+        word: String,
+        context: Option<String>,
+        amount: i64,
+    },
+    NGram {
+        context: String,
+        prediction: String,
+        amount: u32,
+    },
+}
+
 pub struct LearningDb {
-    conn: Mutex<Connection>,
+    update_tx: std::sync::mpsc::Sender<DbUpdate>,
     user_words_cache: RwLock<HashMap<String, i64>>,
     context_words_cache: RwLock<HashMap<(String, String), i64>>,
     pub ngram_cache: RwLock<HashMap<NGramKey, Vec<NGramEntry>>>,
@@ -123,12 +135,88 @@ impl LearningDb {
             }
         }
 
+        let conn_arc = std::sync::Arc::new(Mutex::new(conn));
+        let (update_tx, update_rx) = std::sync::mpsc::channel::<DbUpdate>();
+
+        let bg_conn = std::sync::Arc::clone(&conn_arc);
+        std::thread::spawn(move || {
+            let mut batch = Vec::new();
+            let batch_size = 50;
+            let timeout = std::time::Duration::from_secs(2);
+
+            loop {
+                match update_rx.recv_timeout(timeout) {
+                    Ok(update) => {
+                        batch.push(update);
+                        if batch.len() >= batch_size {
+                            Self::flush_batch(&bg_conn, &mut batch);
+                        }
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                        if !batch.is_empty() {
+                            Self::flush_batch(&bg_conn, &mut batch);
+                        }
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        if !batch.is_empty() {
+                            Self::flush_batch(&bg_conn, &mut batch);
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+
         Ok(Self {
-            conn: Mutex::new(conn),
+            update_tx,
             user_words_cache: RwLock::new(user_words_cache),
             context_words_cache: RwLock::new(context_words_cache),
             ngram_cache: RwLock::new(ngram_cache),
         })
+    }
+
+    fn flush_batch(conn: &std::sync::Arc<Mutex<Connection>>, batch: &mut Vec<DbUpdate>) {
+        let mut conn = conn.lock().unwrap();
+        let tx = conn.transaction();
+        if let Ok(tx) = tx {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64;
+            
+            for update in batch.drain(..) {
+                match update {
+                    DbUpdate::Word { word, context, amount } => {
+                        let _ = tx.execute(
+                            "INSERT INTO user_words (word, frequency, first_seen, last_used, confidence) VALUES (?1, ?2, ?3, ?3, 1.0)
+                             ON CONFLICT(word) DO UPDATE SET 
+                                frequency = frequency + ?2,
+                                last_used = ?3,
+                                confidence = MIN(10.0, confidence + 0.1)",
+                            rusqlite::params![word, amount, now],
+                        );
+                        if let Some(ctx) = context {
+                            let _ = tx.execute(
+                                "INSERT INTO context_frequencies (word, context, frequency) VALUES (?1, ?2, ?3)
+                                 ON CONFLICT(word, context) DO UPDATE SET frequency = frequency + ?3",
+                                rusqlite::params![word, ctx, amount],
+                            );
+                        }
+                    }
+                    DbUpdate::NGram { context, prediction, amount } => {
+                        let _ = tx.execute(
+                            "INSERT INTO ngrams (context, prediction, order_num, frequency, last_updated)
+                             VALUES (?1, ?2, 2, ?3, ?4)
+                             ON CONFLICT(context, prediction) DO UPDATE SET 
+                             frequency = frequency + ?3,
+                             last_updated = ?4",
+                            rusqlite::params![context, prediction, amount, now],
+                        );
+                    }
+                }
+            }
+            let _ = tx.commit();
+        }
     }
 
     pub fn increase_weight(
@@ -137,32 +225,20 @@ impl LearningDb {
         context: Option<&str>,
         amount: i64,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let conn = self.conn.lock().unwrap();
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs() as i64;
+        // Send to background thread for batch writing
+        let _ = self.update_tx.send(DbUpdate::Word {
+            word: word.to_string(),
+            context: context.map(|s| s.to_string()),
+            amount,
+        });
 
-        conn.execute(
-            "INSERT INTO user_words (word, frequency, first_seen, last_used, confidence) VALUES (?1, ?2, ?3, ?3, 1.0)
-             ON CONFLICT(word) DO UPDATE SET 
-                frequency = frequency + ?2,
-                last_used = ?3,
-                confidence = MIN(10.0, confidence + 0.1)",
-            rusqlite::params![word, amount, now],
-        )?;
-
-        // Update in-memory caches
+        // Update in-memory caches immediately for fast inference
         {
             let mut cache = self.user_words_cache.write().unwrap();
             *cache.entry(word.to_string()).or_insert(0) += amount;
         }
 
         if let Some(ctx) = context {
-            conn.execute(
-                "INSERT INTO context_frequencies (word, context, frequency) VALUES (?1, ?2, ?3)
-                 ON CONFLICT(word, context) DO UPDATE SET frequency = frequency + ?3",
-                rusqlite::params![word, ctx, amount],
-            )?;
             let mut cache = self.context_words_cache.write().unwrap();
             *cache
                 .entry((word.to_string(), ctx.to_string()))
@@ -178,21 +254,13 @@ impl LearningDb {
         prediction: &str,
         weight: u32,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+        let _ = self.update_tx.send(DbUpdate::NGram {
+            context: context.to_string(),
+            prediction: prediction.to_string(),
+            amount: weight,
+        });
 
-        {
-            let conn = self.conn.lock().unwrap();
-            conn.execute(
-                "INSERT INTO ngrams (context, prediction, order_num, frequency, last_updated)
-                 VALUES (?1, ?2, 2, ?3, ?4)
-                 ON CONFLICT(context, prediction) DO UPDATE SET 
-                 frequency = frequency + ?3,
-                 last_updated = ?4",
-                rusqlite::params![context, prediction, weight, now],
-            )?;
-        }
-
-        // Update in-memory cache
+        // Update in-memory cache immediately
         let key = NGramKey {
             context: context.to_string(),
         };
