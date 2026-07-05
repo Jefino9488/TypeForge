@@ -1,18 +1,24 @@
 use crate::dictionary::immutable::ImmutableDictionary;
 use crate::dictionary::symspell_impl::SymSpellChecker;
 use crate::learning::{
-    Learner, LearningConfig, LearningDb, ScoreContext, SessionMemory, TelemetryDb,
+    Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb,
 };
-use crate::traits::{Dictionary, Predictor, SpellChecker};
+use crate::traits::{Dictionary, SpellChecker};
+use crate::pipeline::{
+    BasicFeatureExtractor, LimitProcessor, LinearRanker, PipelineBuilder, PredictionRequest,
+    PrefixGenerator, SessionGenerator, SpellExpander,
+};
 use arc_swap::ArcSwap;
 use std::sync::{Arc, RwLock};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 use typeforge_protocol::{PredictRequest, Prediction, PredictionSource};
 
 pub struct TypeForgeEngine {
     immutable: Arc<ArcSwap<ImmutableDictionary>>,
     spell_checker: Arc<RwLock<SymSpellChecker>>,
     learner: Arc<Learner>,
+    pipeline: crate::pipeline::builder::Pipeline,
     immutable_path: String,
     candidate_limit: usize,
 }
@@ -40,10 +46,32 @@ impl TypeForgeEngine {
             LearningConfig::default(),
         ));
 
+        let immutable_arc = Arc::new(ArcSwap::from_pointee(immutable));
+        let spell_checker_arc = Arc::new(RwLock::new(spell_checker));
+
+        let pipeline = PipelineBuilder::new()
+            .generator(Box::new(PrefixGenerator::new(
+                Arc::clone(&immutable_arc),
+                candidate_limit * 2,
+            )))
+            .generator(Box::new(SessionGenerator::new(
+                Arc::clone(&learner),
+                candidate_limit * 2,
+            )))
+            .expander(Box::new(SpellExpander::new(
+                Arc::clone(&spell_checker_arc),
+                candidate_limit,
+            )))
+            .feature(Box::new(BasicFeatureExtractor))
+            .ranker(Box::new(LinearRanker::new()))
+            .postprocessor(Box::new(LimitProcessor::new(candidate_limit)))
+            .build();
+
         Ok(Self {
-            immutable: Arc::new(ArcSwap::from_pointee(immutable)),
-            spell_checker: Arc::new(RwLock::new(spell_checker)),
+            immutable: immutable_arc,
+            spell_checker: spell_checker_arc,
             learner,
+            pipeline,
             immutable_path,
             candidate_limit,
         })
@@ -53,64 +81,36 @@ impl TypeForgeEngine {
         self.candidate_limit
     }
 
-    pub fn predict(&self, prefix: &str, req: &PredictRequest, limit: usize) -> Vec<Prediction> {
+    pub fn predict(&self, prefix: &str, req: &PredictRequest, _limit: usize) -> Vec<Prediction> {
         let is_all_caps = !prefix.is_empty()
             && prefix
                 .chars()
                 .all(|c| !c.is_alphabetic() || c.is_uppercase());
         let is_capitalized = !prefix.is_empty() && prefix.chars().next().unwrap().is_uppercase();
 
-        let search_prefix = prefix.to_lowercase();
-
-        let immut = self.immutable.load();
-
-        // 1. Get raw candidates from the dictionary prior
-        let mut candidates = immut.predict(&search_prefix, req, limit * 2);
-
-        // 1b. Get raw candidates from the learning database
-        if let Ok(learned_words) = self
-            .learner
-            .get_candidates_by_prefix(&search_prefix, limit * 2)
-        {
-            for word in learned_words {
-                if !candidates.iter().any(|c| c.text == word) {
-                    candidates.push(Prediction {
-                        text: word,
-                        score: 0.0, // Base score is 0, will be updated by pipeline
-                        source: PredictionSource::User,
-                    });
-                }
-            }
-        }
-
-        // 1c. Spell check fallback if few candidates
-        if candidates.len() < limit && search_prefix.len() >= 3 {
-            let corrections = self.correct_spelling(&search_prefix, limit - candidates.len());
-            for mut c in corrections {
-                if !candidates.iter().any(|existing| existing.text == c.text) {
-                    c.source = PredictionSource::SpellCorrection;
-                    // Boost the spelling correction score slightly so it ranks decently
-                    // alongside unigram frequencies.
-                    c.score *= 100.0;
-                    candidates.push(c);
-                }
-            }
-        }
-
-        // 2. Score and Rank through the Pipeline
-        let ctx = ScoreContext {
-            application: req.application.as_deref(),
+        let request = PredictionRequest {
+            text_before_cursor: req.text_before_cursor.clone(),
+            text_after_cursor: req.text_after_cursor.clone(),
+            cursor_position: req.cursor_position as usize,
+            application: req.application.clone().unwrap_or_default(),
+            language: None,
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
         };
-        self.learner.pipeline.rank(&mut candidates, &ctx);
 
-        // 3. Normalize scores to 0.0 - 1.0 (Optional but helpful for debug/UI)
-        let max_score = candidates.first().map(|c| c.score).unwrap_or(1.0).max(1.0);
-        for c in &mut candidates {
-            c.score /= max_score;
-        }
+        let result = self.pipeline.execute(&request);
 
-        // 4. Take top limit
-        candidates.truncate(limit);
+        let mut candidates: Vec<Prediction> = result
+            .candidates
+            .into_iter()
+            .map(|c| Prediction {
+                text: c.candidate.text,
+                score: c.ranking.score,
+                source: PredictionSource::User, // Map CandidateSource to PredictionSource if needed
+            })
+            .collect();
 
         // 5. Restore casing
         if is_all_caps {
