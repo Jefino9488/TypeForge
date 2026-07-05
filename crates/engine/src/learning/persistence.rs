@@ -1,5 +1,4 @@
 use rusqlite::Connection;
-use std::collections::HashMap;
 use std::error::Error;
 use std::sync::{Mutex, RwLock};
 
@@ -29,9 +28,9 @@ pub enum DbUpdate {
 
 pub struct LearningDb {
     update_tx: std::sync::mpsc::Sender<DbUpdate>,
-    user_words_cache: RwLock<HashMap<String, i64>>,
-    context_words_cache: RwLock<HashMap<(String, String), i64>>,
-    pub ngram_cache: RwLock<HashMap<NGramKey, Vec<NGramEntry>>>,
+    user_words_cache: RwLock<lru::LruCache<String, i64>>,
+    context_words_cache: RwLock<lru::LruCache<(String, String), i64>>,
+    pub ngram_cache: RwLock<lru::LruCache<NGramKey, Vec<NGramEntry>>>,
 }
 
 impl LearningDb {
@@ -86,35 +85,39 @@ impl LearningDb {
         )?;
 
         // Load all data into in-memory caches to avoid SQLite on the hot path
-        let mut user_words_cache = HashMap::new();
+        let mut user_words_cache = lru::LruCache::new(std::num::NonZeroUsize::new(50_000).unwrap());
         {
-            let mut stmt = conn.prepare("SELECT word, frequency FROM user_words")?;
+            let mut stmt = conn.prepare(
+                "SELECT word, frequency FROM user_words ORDER BY last_used ASC LIMIT 50000",
+            )?;
             let mut rows = stmt.query([])?;
             while let Some(row) = rows.next()? {
                 let word: String = row.get(0)?;
                 let freq: i64 = row.get(1)?;
-                user_words_cache.insert(word, freq);
+                user_words_cache.put(word, freq);
             }
         }
 
-        let mut context_words_cache = HashMap::new();
+        let mut context_words_cache =
+            lru::LruCache::new(std::num::NonZeroUsize::new(50_000).unwrap());
         {
             let mut stmt =
-                conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
+                conn.prepare("SELECT word, context, frequency FROM context_frequencies ORDER BY frequency ASC LIMIT 50000")?;
             let mut rows = stmt.query([])?;
             while let Some(row) = rows.next()? {
                 let word: String = row.get(0)?;
                 let ctx: String = row.get(1)?;
                 let freq: i64 = row.get(2)?;
-                context_words_cache.insert((word, ctx), freq);
+                context_words_cache.put((word, ctx), freq);
             }
         }
 
         // Populate in-memory NGram cache
-        let mut ngram_cache = HashMap::new();
+        let mut ngram_cache: lru::LruCache<NGramKey, Vec<NGramEntry>> =
+            lru::LruCache::new(std::num::NonZeroUsize::new(50_000).unwrap());
         {
             let mut stmt = conn.prepare(
-                "SELECT context, prediction, frequency FROM ngrams ORDER BY frequency DESC",
+                "SELECT context, prediction, frequency FROM ngrams ORDER BY last_updated ASC LIMIT 50000",
             )?;
             let rows = stmt.query_map([], |row| {
                 let context: String = row.get(0)?;
@@ -125,13 +128,15 @@ impl LearningDb {
 
             for row in rows.flatten() {
                 let key = NGramKey { context: row.0 };
-                ngram_cache
-                    .entry(key)
-                    .or_insert_with(Vec::new)
-                    .push(NGramEntry {
-                        prediction: row.1,
-                        frequency: row.2,
-                    });
+                let entry = NGramEntry {
+                    prediction: row.1,
+                    frequency: row.2,
+                };
+                if let Some(vec) = ngram_cache.get_mut(&key) {
+                    vec.push(entry);
+                } else {
+                    ngram_cache.put(key, vec![entry]);
+                }
             }
         }
 
@@ -243,14 +248,21 @@ impl LearningDb {
         // Update in-memory caches immediately for fast inference
         {
             let mut cache = self.user_words_cache.write().unwrap();
-            *cache.entry(word.to_string()).or_insert(0) += amount;
+            if let Some(val) = cache.get_mut(word) {
+                *val += amount;
+            } else {
+                cache.put(word.to_string(), amount);
+            }
         }
 
         if let Some(ctx) = context {
             let mut cache = self.context_words_cache.write().unwrap();
-            *cache
-                .entry((word.to_string(), ctx.to_string()))
-                .or_insert(0) += amount;
+            let key = (word.to_string(), ctx.to_string());
+            if let Some(val) = cache.get_mut(&key) {
+                *val += amount;
+            } else {
+                cache.put(key, amount);
+            }
         }
 
         Ok(())
@@ -273,7 +285,12 @@ impl LearningDb {
             context: context.to_string(),
         };
         let mut cache = self.ngram_cache.write().unwrap();
-        let entries = cache.entry(key).or_default();
+
+        let mut entries = if let Some(existing) = cache.get_mut(&key) {
+            existing.clone()
+        } else {
+            Vec::new()
+        };
 
         if let Some(entry) = entries.iter_mut().find(|e| e.prediction == prediction) {
             entry.frequency += weight;
@@ -287,6 +304,8 @@ impl LearningDb {
         // Re-sort the entries by frequency descending
         entries.sort_by_key(|b| std::cmp::Reverse(b.frequency));
 
+        cache.put(key, entries);
+
         Ok(())
     }
 
@@ -297,7 +316,7 @@ impl LearningDb {
     ) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let mut total = 0i64;
 
-        if let Some(freq) = self.user_words_cache.read().unwrap().get(word) {
+        if let Some(freq) = self.user_words_cache.read().unwrap().peek(word) {
             total += freq;
         }
 
@@ -306,7 +325,7 @@ impl LearningDb {
                 .context_words_cache
                 .read()
                 .unwrap()
-                .get(&(ctx.to_string(), word.to_string()))
+                .peek(&(ctx.to_string(), word.to_string()))
         {
             total += freq;
         }
@@ -340,7 +359,7 @@ impl LearningDb {
             context: context.to_string(),
         };
         let cache = self.ngram_cache.read().unwrap();
-        if let Some(entries) = cache.get(&key) {
+        if let Some(entries) = cache.peek(&key) {
             entries
                 .iter()
                 .take(limit)

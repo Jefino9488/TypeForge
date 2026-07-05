@@ -31,7 +31,12 @@ impl Pipeline {
         let gen_start = Instant::now();
         let mut raw_candidates = Vec::new();
         for generator in &self.generators {
-            raw_candidates.extend(generator.generate(request));
+            let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                generator.generate(request)
+            }));
+            if let Ok(candidates) = res {
+                raw_candidates.extend(candidates);
+            }
         }
         let gen_elapsed = gen_start.elapsed().as_micros() as u64;
         telemetry.generator_latency_us = gen_elapsed;
@@ -48,7 +53,12 @@ impl Pipeline {
         let exp_start = Instant::now();
         let mut expanded_candidates = Vec::new();
         for exp in &self.expanders {
-            expanded_candidates.extend(exp.expand(request, &raw_candidates));
+            let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                exp.expand(request, &raw_candidates)
+            }));
+            if let Ok(expanded) = res {
+                expanded_candidates.extend(expanded);
+            }
         }
         raw_candidates.extend(expanded_candidates.clone());
         let exp_elapsed = exp_start.elapsed().as_micros() as u64;
@@ -98,12 +108,20 @@ impl Pipeline {
 
             let f_s = Instant::now();
             for ext in &self.extractors {
-                ext.extract(request, &raw, &mut features);
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ext.extract(request, &raw, &mut features);
+                }));
             }
             extract_total += f_s.elapsed().as_micros() as u64;
 
             let r_s = Instant::now();
-            let ranking = ranker.score(request, &raw, &features);
+            let ranking = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                ranker.score(request, &raw, &features)
+            }))
+            .unwrap_or(super::candidate::RankingResult {
+                score: 0.0,
+                confidence: 0.0,
+            });
             rank_total += r_s.elapsed().as_micros() as u64;
 
             scored_candidates.push(ScoredCandidate {
@@ -129,8 +147,10 @@ impl Pipeline {
 
         // Stage 6: Post-processing
         let post_start = Instant::now();
-        for post in &self.postprocessors {
-            post.process(request, &mut scored_candidates);
+        for proc in &self.postprocessors {
+            let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                proc.process(request, &mut scored_candidates);
+            }));
         }
         let post_elapsed = post_start.elapsed().as_micros() as u64;
         observer.on_postprocess_done(&scored_candidates, post_elapsed);
