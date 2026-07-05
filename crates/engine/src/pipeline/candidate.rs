@@ -31,6 +31,7 @@ pub struct FeatureSet {
     pub session_frequency: f32,
     pub context_score: f32,
     pub prefix_length: u8,
+    pub prefix_confidence: f32,
     pub exact_prefix: bool,
     pub edit_distance: u8,
     pub word_length: u8,

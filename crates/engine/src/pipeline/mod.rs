@@ -20,7 +20,8 @@ pub use generator::{
     ContextGenerator, PhraseGenerator, PrefixGenerator, SessionGenerator, UserDictionaryGenerator,
 };
 pub use observer::{NoopObserver, PipelineObserver, TraceObserver};
-pub use postprocess::{CapitalizationProcessor, DiversityProcessor, LimitProcessor};
+pub use postprocess::adaptive_count::AdaptiveCountProcessor;
+pub use postprocess::{CapitalizationProcessor, LimitProcessor};
 pub use ranking::WeightedRanker;
 pub use request::PredictionRequest;
 pub use result::{PredictionResult, PredictionTelemetry};

@@ -40,11 +40,8 @@ impl RankingStrategy for WeightedRanker {
         score += features.ngram_probability * self.config.ngram;
 
         let prefix_bonus = if features.exact_prefix { 0.2 } else { 0.0 };
-        let length_bonus = if features.word_length > 0 {
-            (features.prefix_length as f32 / features.word_length as f32) * 0.1
-        } else {
-            0.0
-        };
+        // Heavily boost confidence of nearly-complete words
+        let length_bonus = features.prefix_confidence * 0.25;
 
         let penalty = if features.edit_distance > 0 {
             features.edit_distance as f32 * 0.15
