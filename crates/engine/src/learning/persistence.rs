@@ -134,7 +134,11 @@ impl LearningDb {
         }
 
         if let Some(ctx) = context
-            && let Some(freq) = self.context_words_cache.read().unwrap().get(&(ctx.to_string(), word.to_string()))
+            && let Some(freq) = self
+                .context_words_cache
+                .read()
+                .unwrap()
+                .get(&(ctx.to_string(), word.to_string()))
         {
             total += freq;
         }
