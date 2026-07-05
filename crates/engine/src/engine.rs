@@ -5,9 +5,10 @@ use crate::learning::{
 };
 use crate::traits::{Dictionary, SpellChecker};
 use crate::pipeline::{
-    BasicFeatureExtractor, LimitProcessor, LinearRanker, PipelineBuilder, PredictionRequest,
-    PrefixGenerator, SessionGenerator, SpellExpander,
+    BasicFeatureExtractor, LimitProcessor, CapitalizationProcessor, WeightedRanker, PipelineBuilder, PredictionRequest,
+    PrefixGenerator, SessionGenerator, UserDictionaryGenerator, ContextGenerator, SpellExpander, FuzzyExpander
 };
+use typeforge_common::config::RankingConfig;
 use arc_swap::ArcSwap;
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -20,7 +21,7 @@ pub struct TypeForgeEngine {
     learner: Arc<Learner>,
     pipeline: crate::pipeline::builder::Pipeline,
     immutable_path: String,
-    candidate_limit: usize,
+    ranking_config: RankingConfig,
 }
 
 impl TypeForgeEngine {
@@ -28,7 +29,7 @@ impl TypeForgeEngine {
         immutable_path: String,
         learning_db_path: &str,
         telemetry_db_path: &str,
-        candidate_limit: usize,
+        ranking_config: RankingConfig,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let mut immutable = ImmutableDictionary::new(immutable_path.clone());
         immutable.load()?;
@@ -48,23 +49,40 @@ impl TypeForgeEngine {
 
         let immutable_arc = Arc::new(ArcSwap::from_pointee(immutable));
         let spell_checker_arc = Arc::new(RwLock::new(spell_checker));
+        let config_arc = Arc::new(ranking_config.clone());
 
         let pipeline = PipelineBuilder::new()
             .generator(Box::new(PrefixGenerator::new(
                 Arc::clone(&immutable_arc),
-                candidate_limit * 2,
+                ranking_config.candidate_limit * 2,
             )))
             .generator(Box::new(SessionGenerator::new(
                 Arc::clone(&learner),
-                candidate_limit * 2,
+                ranking_config.candidate_limit * 2,
+            )))
+            .generator(Box::new(UserDictionaryGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit,
+            )))
+            .generator(Box::new(ContextGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit,
             )))
             .expander(Box::new(SpellExpander::new(
                 Arc::clone(&spell_checker_arc),
-                candidate_limit,
+                ranking_config.candidate_limit,
             )))
-            .feature(Box::new(BasicFeatureExtractor))
-            .ranker(Box::new(LinearRanker::new()))
-            .postprocessor(Box::new(LimitProcessor::new(candidate_limit)))
+            .expander(Box::new(FuzzyExpander::new(
+                Arc::clone(&spell_checker_arc),
+                ranking_config.candidate_limit,
+            )))
+            .feature(Box::new(BasicFeatureExtractor::new(
+                Arc::clone(&learner),
+                Arc::clone(&immutable_arc),
+            )))
+            .ranker(Box::new(WeightedRanker::new(config_arc)))
+            .postprocessor(Box::new(CapitalizationProcessor::new()))
+            .postprocessor(Box::new(LimitProcessor::new(ranking_config.candidate_limit)))
             .build();
 
         Ok(Self {
@@ -73,12 +91,12 @@ impl TypeForgeEngine {
             learner,
             pipeline,
             immutable_path,
-            candidate_limit,
+            ranking_config,
         })
     }
 
     pub fn get_candidate_limit(&self) -> usize {
-        self.candidate_limit
+        self.ranking_config.candidate_limit
     }
 
     pub fn predict(&self, prefix: &str, req: &PredictRequest, _limit: usize) -> Vec<Prediction> {
@@ -251,7 +269,7 @@ mod tests {
     #[test]
     fn test_engine_predictions_and_normalization() {
         let (dict_path, l_db_path, t_db_path) = setup_dummy_assets();
-        let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap();
+        let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, typeforge_common::config::RankingConfig::default()).unwrap();
 
         let preds = engine.predict("app", &dummy_req(), 5);
         assert_eq!(preds.len(), 2);

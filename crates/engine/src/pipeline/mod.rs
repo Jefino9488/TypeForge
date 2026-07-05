@@ -18,8 +18,8 @@ pub use result::{PredictionResult, PredictionTelemetry};
 pub use traits::{
     CandidateExpander, CandidateGenerator, FeatureExtractor, PostProcessor, RankingStrategy,
 };
-pub use generator::{PrefixGenerator, SessionGenerator};
-pub use expander::SpellExpander;
+pub use generator::{PrefixGenerator, SessionGenerator, UserDictionaryGenerator, ContextGenerator};
+pub use expander::{SpellExpander, FuzzyExpander};
 pub use features::BasicFeatureExtractor;
-pub use ranking::LinearRanker;
-pub use postprocess::LimitProcessor;
+pub use ranking::WeightedRanker;
+pub use postprocess::{LimitProcessor, CapitalizationProcessor};

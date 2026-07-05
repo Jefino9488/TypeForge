@@ -93,3 +93,87 @@ impl CandidateGenerator for SessionGenerator {
         }).collect()
     }
 }
+
+pub struct UserDictionaryGenerator {
+    learner: Arc<Learner>,
+    limit: usize,
+}
+
+impl UserDictionaryGenerator {
+    pub fn new(learner: Arc<Learner>, limit: usize) -> Self {
+        Self { learner, limit }
+    }
+}
+
+impl CandidateGenerator for UserDictionaryGenerator {
+    fn generate(&self, request: &PredictionRequest) -> Vec<RawCandidate> {
+        let prefix = request
+            .text_before_cursor
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_lowercase();
+        if prefix.is_empty() {
+            return vec![];
+        }
+
+        let words = self.learner.get_candidates_by_prefix(&prefix, self.limit * 2).unwrap_or_default();
+        words.into_iter()
+            .filter(|w| self.learner.learning_db.get_weight(w, None).unwrap_or(0) > 0)
+            .take(self.limit)
+            .map(|text| RawCandidate {
+                text: text.clone(),
+                metadata: CandidateMetadata {
+                    source: CandidateSource::UserDictionary,
+                    matched_prefix: prefix.clone(),
+                    edit_distance: 0,
+                    context_match: false,
+                }
+            })
+            .collect()
+    }
+}
+
+pub struct ContextGenerator {
+    learner: Arc<Learner>,
+    limit: usize,
+}
+
+impl ContextGenerator {
+    pub fn new(learner: Arc<Learner>, limit: usize) -> Self {
+        Self { learner, limit }
+    }
+}
+
+impl CandidateGenerator for ContextGenerator {
+    fn generate(&self, request: &PredictionRequest) -> Vec<RawCandidate> {
+        if request.application.is_empty() {
+            return vec![];
+        }
+
+        let prefix = request
+            .text_before_cursor
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_lowercase();
+        if prefix.is_empty() {
+            return vec![];
+        }
+
+        let words = self.learner.get_candidates_by_prefix(&prefix, self.limit * 4).unwrap_or_default();
+        words.into_iter()
+            .filter(|w| self.learner.learning_db.get_weight(w, Some(&request.application)).unwrap_or(0) > 0)
+            .take(self.limit)
+            .map(|text| RawCandidate {
+                text: text.clone(),
+                metadata: CandidateMetadata {
+                    source: CandidateSource::Context,
+                    matched_prefix: prefix.clone(),
+                    edit_distance: 0,
+                    context_match: true,
+                }
+            })
+            .collect()
+    }
+}
