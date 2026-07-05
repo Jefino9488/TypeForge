@@ -19,7 +19,7 @@ typeforge-common = { version = "0.3.0", path = "../common" }
 
 [dev-dependencies]
 uuid = { version = "1.8.0", features = ["v4"] }
-criterion = "0.5.1"
+criterion = "0.8.2"
 
 [[bench]]
 name = "predict_benchmark"
