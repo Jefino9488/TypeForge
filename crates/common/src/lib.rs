@@ -95,40 +95,6 @@ pub mod config {
         }
     }
 
-    #[derive(Debug, Deserialize, Serialize, Clone)]
-    #[serde(default)]
-    pub struct RankingConfig {
-        pub base_frequency: f32,
-        pub user_frequency: f32,
-        pub context: f32,
-        pub session: f32,
-        pub ngram: f32,
-        pub candidate_limit: usize,
-        pub minimum_confidence: f32,
-        pub minimum_prefix: usize,
-        pub enable_fuzzy: bool,
-        pub enable_context: bool,
-        pub enable_session: bool,
-    }
-
-    impl Default for RankingConfig {
-        fn default() -> Self {
-            Self {
-                base_frequency: 0.35,
-                user_frequency: 0.30,
-                context: 0.15,
-                session: 0.10,
-                ngram: 0.10,
-                candidate_limit: 15,
-                minimum_confidence: 0.1,
-                minimum_prefix: 1,
-                enable_fuzzy: true,
-                enable_context: true,
-                enable_session: true,
-            }
-        }
-    }
-
     #[derive(Debug, Deserialize, Serialize, Clone, Default)]
     pub struct AppConfig {
         #[serde(default)]
@@ -139,8 +105,6 @@ pub mod config {
         pub logging: LoggingConfig,
         #[serde(default)]
         pub session: SessionConfig,
-        #[serde(default)]
-        pub ranking: RankingConfig,
     }
 
     impl AppConfig {
