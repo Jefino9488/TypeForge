@@ -1,14 +1,29 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tracing::{error, warn};
 use typeforge_engine::engine::TypeForgeEngine;
+use typeforge_engine::pipeline::request::CancellationToken;
 use typeforge_protocol::{ProtocolMessage, Request, Response};
 
-pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>) {
+pub async fn handle_client(stream: UnixStream, engine: Arc<TypeForgeEngine>, global_token: Arc<Mutex<Option<CancellationToken>>>) {
+    let (mut rx_stream, mut tx_stream) = stream.into_split();
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(32);
+
+    // Writer task
+    tokio::spawn(async move {
+        while let Some(msg) = rx.recv().await {
+            if let Err(e) = tx_stream.write_all(msg.as_bytes()).await {
+                error!("Failed to write to socket: {}", e);
+                break;
+            }
+        }
+    });
+
     let mut buf = vec![0; 4096];
+
     loop {
-        match stream.read(&mut buf).await {
+        match rx_stream.read(&mut buf).await {
             Ok(0) => break, // Connection closed
             Ok(n) => {
                 let msg = &buf[0..n];
@@ -18,67 +33,70 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
 
                 match envelope {
                     Ok(env) => {
-                        // In a real high-throughput scenario, we could spawn a task per request
-                        // and track it in a HashMap via request_id to support Cancellation.
-                        // Since predictions are <5ms, we process sequentially per client connection.
+                        let engine_clone = engine.clone();
+                        let tx_clone = tx.clone();
+                        let global_token_clone = global_token.clone();
 
-                        let response_payload = match env.payload {
-                            Request::Predict(r) => {
-                                let predictions =
-                                    engine.predict(&r.prefix, &r, engine.get_candidate_limit());
-                                Response::Predict { predictions }
-                            }
-                            Request::Explain(r) => {
-                                let trace = engine.explain(&r);
-                                Response::Explain { trace }
-                            }
-                            Request::Learn(r) => {
-                                let accepted = r.frequency_delta > 0;
-                                // In the future, Fcitx should send `application` in LearnRequest as well
-                                match engine.learn(&r.word, None, accepted) {
-                                    Ok(_) => Response::Success,
-                                    Err(e) => {
-                                        error!("Failed to learn word: {}", e);
-                                        Response::Error {
-                                            code: "LEARN_ERROR".into(),
-                                            message: e.to_string(),
+                        tokio::spawn(async move {
+                            let response_payload = match env.payload {
+                                Request::Predict(r) => {
+                                    let token = CancellationToken::new();
+                                    {
+                                        let mut ct = global_token_clone.lock().unwrap();
+                                        if let Some(old_token) = ct.take() {
+                                            old_token.cancel();
+                                        }
+                                        *ct = Some(token.clone());
+                                    }
+                                    let predictions = engine_clone.predict(&r.prefix, &r, engine_clone.get_candidate_limit(), token);
+                                    Response::Predict { predictions }
+                                }
+                                Request::Explain(r) => {
+                                    let trace = engine_clone.explain(&r, CancellationToken::new());
+                                    Response::Explain { trace }
+                                }
+                                Request::Learn(r) => {
+                                    let accepted = r.frequency_delta > 0;
+                                    match engine_clone.learn(&r.word, None, accepted) {
+                                        Ok(_) => Response::Success,
+                                        Err(e) => {
+                                            error!("Failed to learn word: {}", e);
+                                            Response::Error {
+                                                code: "LEARN_ERROR".into(),
+                                                message: e.to_string(),
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            Request::ReloadDictionary => {
-                                engine.reload_dictionary_background();
-                                Response::Success
-                            }
-                            Request::SetLearningEnabled(enabled) => {
-                                engine.set_learning_enabled(enabled);
-                                Response::Success
-                            }
-                        };
+                                Request::ReloadDictionary => {
+                                    engine_clone.reload_dictionary_background();
+                                    Response::Success
+                                }
+                                Request::SetLearningEnabled(enabled) => {
+                                    engine_clone.set_learning_enabled(enabled);
+                                    Response::Success
+                                }
+                            };
 
-                        let resp_envelope = ProtocolMessage {
-                            version: env.version,
-                            request_id: env.request_id,
-                            payload: response_payload,
-                        };
+                            let resp_envelope = ProtocolMessage {
+                                version: env.version,
+                                request_id: env.request_id,
+                                payload: response_payload,
+                            };
 
-                        let resp_str =
-                            serde_json::to_string(&resp_envelope).unwrap_or_else(|_| "{}".into());
-                        if let Err(e) = stream.write_all(resp_str.as_bytes()).await {
-                            error!("Failed to write to socket: {}", e);
-                            break;
-                        }
+                            let resp_str = serde_json::to_string(&resp_envelope)
+                                .unwrap_or_else(|_| "{}".into());
+                            let _ = tx_clone.send(resp_str).await;
+                        });
                     }
                     Err(e) => {
                         warn!("Failed to parse request: {}", e);
-                        // If we can't parse the envelope, we don't know the request_id
                         let err_resp = Response::Error {
                             code: "PARSE_ERROR".into(),
                             message: e.to_string(),
                         };
-                        let err_str =
-                            serde_json::to_string(&err_resp).unwrap_or_else(|_| "{}".into());
-                        let _ = stream.write_all(err_str.as_bytes()).await;
+                        let err_str = serde_json::to_string(&err_resp).unwrap_or_else(|_| "{}".into());
+                        let _ = tx.send(err_str).await;
                     }
                 }
             }
@@ -121,7 +139,8 @@ mod tests {
             Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, config).unwrap());
 
         tokio::spawn(async move {
-            handle_client(server, engine).await;
+            let token = std::sync::Arc::new(std::sync::Mutex::new(None));
+            handle_client(server, engine, token).await;
         });
 
         let req_id = Uuid::new_v4();

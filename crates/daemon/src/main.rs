@@ -1,7 +1,8 @@
 mod ipc;
 
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use typeforge_engine::pipeline::request::CancellationToken;
 use tokio::net::UnixListener;
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
@@ -62,12 +63,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let listener = UnixListener::bind(&socket_path)?;
     info!("Listening on {}", socket_path);
 
+    let global_token: Arc<Mutex<Option<CancellationToken>>> = Arc::new(Mutex::new(None));
+
     loop {
         match listener.accept().await {
             Ok((stream, _)) => {
                 let engine_clone = Arc::clone(&engine);
+                let token_clone = Arc::clone(&global_token);
                 tokio::spawn(async move {
-                    ipc::handle_client(stream, engine_clone).await;
+                    ipc::handle_client(stream, engine_clone, token_clone).await;
                 });
             }
             Err(e) => {
