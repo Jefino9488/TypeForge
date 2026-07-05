@@ -34,6 +34,12 @@ impl CapitalizationProcessor {
     }
 }
 
+impl Default for CapitalizationProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PostProcessor for CapitalizationProcessor {
     fn process(&self, request: &PredictionRequest, candidates: &mut Vec<ScoredCandidate>) {
         let prefix = request

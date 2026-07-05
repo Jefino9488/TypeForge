@@ -225,15 +225,10 @@ impl LearningDb {
             total += freq;
         }
 
-        if let Some(ctx) = context {
-            if let Some(freq) = self
-                .context_words_cache
-                .read()
-                .unwrap()
-                .get(&(word.to_string(), ctx.to_string()))
-            {
-                total += freq;
-            }
+        if let Some(ctx) = context
+            && let Some(freq) = self.context_words_cache.read().unwrap().get(&(ctx.to_string(), word.to_string()))
+        {
+            total += freq;
         }
 
         Ok(total)
