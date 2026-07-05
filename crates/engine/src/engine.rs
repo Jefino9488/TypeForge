@@ -1,11 +1,12 @@
 use crate::dictionary::immutable::ImmutableDictionary;
 use crate::dictionary::symspell_impl::SymSpellChecker;
 use crate::learning::{Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb};
+use crate::pipeline::postprocess::adaptive_count::AdaptiveCountProcessor;
 use crate::pipeline::{
-    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, DiversityProcessor,
-    FuzzyExpander, LimitProcessor, NoopObserver, PhraseGenerator, PipelineBuilder,
-    PredictionRequest, PrefixGenerator, SegmentationExpander, SessionGenerator, SpellExpander,
-    TraceObserver, UserDictionaryGenerator, WeightedRanker,
+    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, FuzzyExpander,
+    LimitProcessor, NoopObserver, PhraseGenerator, PipelineBuilder, PredictionRequest,
+    PrefixGenerator, SegmentationExpander, SessionGenerator, SpellExpander, TraceObserver,
+    UserDictionaryGenerator, WeightedRanker,
 };
 use crate::traits::{Dictionary, SpellChecker};
 use arc_swap::ArcSwap;
@@ -88,8 +89,8 @@ impl TypeForgeEngine {
                 Arc::clone(&immutable_arc),
             )))
             .ranker(Box::new(WeightedRanker::new(config_arc)))
-            .postprocessor(Box::new(DiversityProcessor::new()))
             .postprocessor(Box::new(CapitalizationProcessor::new()))
+            .postprocessor(Box::new(AdaptiveCountProcessor))
             .postprocessor(Box::new(LimitProcessor::new(
                 ranking_config.candidate_limit,
             )))
@@ -109,7 +110,13 @@ impl TypeForgeEngine {
         self.ranking_config.candidate_limit
     }
 
-    pub fn predict(&self, prefix: &str, req: &PredictRequest, _limit: usize) -> Vec<Prediction> {
+    pub fn predict(
+        &self,
+        prefix: &str,
+        req: &PredictRequest,
+        _limit: usize,
+        cancellation_token: crate::pipeline::request::CancellationToken,
+    ) -> Vec<Prediction> {
         let is_all_caps = !prefix.is_empty()
             && prefix
                 .chars()
@@ -126,6 +133,7 @@ impl TypeForgeEngine {
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as u64,
+            cancellation_token,
         };
 
         let mut observer = NoopObserver;
@@ -157,7 +165,11 @@ impl TypeForgeEngine {
 
         candidates
     }
-    pub fn explain(&self, req: &PredictRequest) -> PipelineTrace {
+    pub fn explain(
+        &self,
+        req: &PredictRequest,
+        cancellation_token: crate::pipeline::request::CancellationToken,
+    ) -> PipelineTrace {
         let request = PredictionRequest {
             text_before_cursor: req.text_before_cursor.clone(),
             text_after_cursor: req.text_after_cursor.clone(),
@@ -168,6 +180,7 @@ impl TypeForgeEngine {
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as u64,
+            cancellation_token,
         };
 
         let mut observer = TraceObserver::new(3); // Pipeline version 3
@@ -304,7 +317,12 @@ mod tests {
         )
         .unwrap();
 
-        let preds = engine.predict("app", &dummy_req(), 5);
+        let preds = engine.predict(
+            "app",
+            &dummy_req(),
+            5,
+            crate::pipeline::request::CancellationToken::new(),
+        );
         assert_eq!(preds.len(), 2);
         assert_eq!(preds[0].text, "apple");
         assert_eq!(preds[1].text, "application");
@@ -312,7 +330,12 @@ mod tests {
 
         // Test user learning (accepted prediction)
         engine.learn("approach", None, true).unwrap();
-        let _preds_after = engine.predict("app", &dummy_req(), 5);
+        let _preds_after = engine.predict(
+            "app",
+            &dummy_req(),
+            5,
+            crate::pipeline::request::CancellationToken::new(),
+        );
         // It's not in the immutable dictionary so it won't show up yet.
         // Wait, ImmutableDictionary only returns words starting with prefix!
         // We removed MutableDictionary, so `approach` won't be returned unless it's in the pipeline candidates!

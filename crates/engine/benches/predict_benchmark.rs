@@ -51,7 +51,14 @@ fn criterion_benchmark(c: &mut Criterion) {
     req.text_before_cursor = "We need a new prog".to_string();
 
     c.bench_function("predict_prog", |b| {
-        b.iter(|| engine.predict(black_box("prog"), &req, 5))
+        b.iter(|| {
+            engine.predict(
+                black_box("prog"),
+                &req,
+                5,
+                typeforge_engine::pipeline::request::CancellationToken::new(),
+            )
+        })
     });
 }
 

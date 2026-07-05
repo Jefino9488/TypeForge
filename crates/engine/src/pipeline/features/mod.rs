@@ -34,6 +34,14 @@ impl FeatureExtractor for BasicFeatureExtractor {
         let text_lower = candidate.text.to_lowercase();
         let prefix_lower = candidate.metadata.matched_prefix.to_lowercase();
         features.exact_prefix = text_lower.starts_with(&prefix_lower);
+
+        if features.exact_prefix && features.word_length > 0 {
+            features.prefix_confidence =
+                (features.prefix_length as f32) / (features.word_length as f32);
+        } else {
+            features.prefix_confidence = 0.0;
+        }
+
         features.edit_distance = candidate.metadata.edit_distance;
 
         // Base frequency from static dictionary

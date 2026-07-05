@@ -54,9 +54,27 @@ impl Pipeline {
         let exp_elapsed = exp_start.elapsed().as_micros() as u64;
         observer.on_expanders_done(&expanded_candidates, exp_elapsed);
 
-        // Stage 3: Deduplicator
-        let mut seen = HashSet::new();
-        raw_candidates.retain(|c| seen.insert(c.text.clone()));
+        // Stage 3: Deduplication & CandidateDiversifier
+        let mut seen_texts = HashSet::new();
+        let mut seen_stems = HashSet::new();
+
+        raw_candidates.retain(|c| {
+            let mut text = c.text.to_lowercase();
+            if !seen_texts.insert(text.clone()) {
+                return false; // Exact duplicate
+            }
+
+            // Naive stemming for diversity
+            if text.ends_with("ing") {
+                text.truncate(text.len() - 3);
+            } else if text.ends_with("ed") {
+                text.truncate(text.len() - 2);
+            } else if text.ends_with('s') && !text.ends_with("ss") {
+                text.truncate(text.len() - 1);
+            }
+
+            seen_stems.insert(text)
+        });
         telemetry.candidates_generated = raw_candidates.len();
 
         if request.cancelled() {

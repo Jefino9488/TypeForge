@@ -1,3 +1,5 @@
+pub mod adaptive_count;
+
 use super::candidate::ScoredCandidate;
 use super::request::PredictionRequest;
 use super::traits::PostProcessor;
@@ -64,46 +66,5 @@ impl PostProcessor for CapitalizationProcessor {
                 }
             }
         }
-    }
-}
-
-pub struct DiversityProcessor;
-
-impl DiversityProcessor {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for DiversityProcessor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl PostProcessor for DiversityProcessor {
-    fn process(&self, _request: &PredictionRequest, candidates: &mut Vec<ScoredCandidate>) {
-        let mut unique_stems = std::collections::HashSet::new();
-        let mut retained = Vec::new();
-
-        // Assume candidates are already sorted by score/confidence (LimitProcessor should run after DiversityProcessor)
-        for cand in candidates.drain(..) {
-            let mut text = cand.candidate.text.to_lowercase();
-
-            // Very naive stemming just for diversity
-            if text.ends_with("ing") {
-                text.truncate(text.len() - 3);
-            } else if text.ends_with("ed") {
-                text.truncate(text.len() - 2);
-            } else if text.ends_with('s') && !text.ends_with("ss") {
-                text.truncate(text.len() - 1);
-            }
-
-            if unique_stems.insert(text) {
-                retained.push(cand);
-            }
-        }
-
-        *candidates = retained;
     }
 }

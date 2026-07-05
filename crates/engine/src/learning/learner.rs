@@ -1,6 +1,7 @@
 use crate::learning::persistence::{LearningDb, TelemetryDb};
 use crate::learning::pipeline::{
-    CommitEvent, LearningPipeline, NGramLearner, SessionLearner, WordLearner,
+    CommitEvent, CooldownStage, LearningPipeline, NGramLearner, SessionLearner, SpamFilterStage,
+    WordLearner,
 };
 use crate::learning::scorer::ScorePipeline;
 use crate::learning::session::SessionMemory;
@@ -41,6 +42,8 @@ impl Learner {
     ) -> Self {
         let learning_pipeline = Arc::new(
             LearningPipeline::new()
+                .add_stage(Box::new(SpamFilterStage::new()))
+                .add_stage(Box::new(CooldownStage::new()))
                 .add_stage(Box::new(WordLearner::new(learning_db.clone())))
                 .add_stage(Box::new(NGramLearner::new(learning_db.clone())))
                 .add_stage(Box::new(SessionLearner::new(session_memory.clone()))),
