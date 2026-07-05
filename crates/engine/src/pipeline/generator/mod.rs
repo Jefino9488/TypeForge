@@ -3,9 +3,9 @@ use super::super::learning::Learner;
 use super::candidate::{CandidateMetadata, CandidateSource, RawCandidate};
 use super::request::PredictionRequest;
 use super::traits::CandidateGenerator;
-use std::sync::Arc;
-use arc_swap::ArcSwap;
 use crate::traits::Predictor;
+use arc_swap::ArcSwap;
+use std::sync::Arc;
 
 pub struct PrefixGenerator {
     dictionary: Arc<ArcSwap<ImmutableDictionary>>,
@@ -32,7 +32,7 @@ impl CandidateGenerator for PrefixGenerator {
         }
 
         let dict = self.dictionary.load();
-        
+
         let dummy_req = typeforge_protocol::PredictRequest {
             prefix: prefix.clone(),
             text_before_cursor: request.text_before_cursor.clone(),
@@ -80,17 +80,23 @@ impl CandidateGenerator for SessionGenerator {
         if prefix.is_empty() {
             return vec![];
         }
-        
-        let learned_words = self.learner.get_candidates_by_prefix(&prefix, self.limit).unwrap_or_default();
-        learned_words.into_iter().map(|word| RawCandidate {
-            text: word,
-            metadata: CandidateMetadata {
-                source: CandidateSource::SessionMemory,
-                matched_prefix: prefix.clone(),
-                edit_distance: 0,
-                context_match: false, // Could check request.application here
-            }
-        }).collect()
+
+        let learned_words = self
+            .learner
+            .get_candidates_by_prefix(&prefix, self.limit)
+            .unwrap_or_default();
+        learned_words
+            .into_iter()
+            .map(|word| RawCandidate {
+                text: word,
+                metadata: CandidateMetadata {
+                    source: CandidateSource::SessionMemory,
+                    matched_prefix: prefix.clone(),
+                    edit_distance: 0,
+                    context_match: false, // Could check request.application here
+                },
+            })
+            .collect()
     }
 }
 
@@ -117,8 +123,12 @@ impl CandidateGenerator for UserDictionaryGenerator {
             return vec![];
         }
 
-        let words = self.learner.get_candidates_by_prefix(&prefix, self.limit * 2).unwrap_or_default();
-        words.into_iter()
+        let words = self
+            .learner
+            .get_candidates_by_prefix(&prefix, self.limit * 2)
+            .unwrap_or_default();
+        words
+            .into_iter()
             .filter(|w| self.learner.learning_db.get_weight(w, None).unwrap_or(0) > 0)
             .take(self.limit)
             .map(|text| RawCandidate {
@@ -128,7 +138,7 @@ impl CandidateGenerator for UserDictionaryGenerator {
                     matched_prefix: prefix.clone(),
                     edit_distance: 0,
                     context_match: false,
-                }
+                },
             })
             .collect()
     }
@@ -161,9 +171,19 @@ impl CandidateGenerator for ContextGenerator {
             return vec![];
         }
 
-        let words = self.learner.get_candidates_by_prefix(&prefix, self.limit * 4).unwrap_or_default();
-        words.into_iter()
-            .filter(|w| self.learner.learning_db.get_weight(w, Some(&request.application)).unwrap_or(0) > 0)
+        let words = self
+            .learner
+            .get_candidates_by_prefix(&prefix, self.limit * 4)
+            .unwrap_or_default();
+        words
+            .into_iter()
+            .filter(|w| {
+                self.learner
+                    .learning_db
+                    .get_weight(w, Some(&request.application))
+                    .unwrap_or(0)
+                    > 0
+            })
             .take(self.limit)
             .map(|text| RawCandidate {
                 text: text.clone(),
@@ -172,7 +192,7 @@ impl CandidateGenerator for ContextGenerator {
                     matched_prefix: prefix.clone(),
                     edit_distance: 0,
                     context_match: true,
-                }
+                },
             })
             .collect()
     }

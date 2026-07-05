@@ -1,4 +1,4 @@
-use super::candidate::{FeatureSet, RawCandidate, ScoredCandidate};
+use super::candidate::{FeatureSet, ScoredCandidate};
 use super::request::PredictionRequest;
 use super::result::{PredictionResult, PredictionTelemetry};
 use super::traits::{

@@ -1,18 +1,17 @@
 use crate::dictionary::immutable::ImmutableDictionary;
 use crate::dictionary::symspell_impl::SymSpellChecker;
-use crate::learning::{
-    Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb,
+use crate::learning::{Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb};
+use crate::pipeline::{
+    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, FuzzyExpander,
+    LimitProcessor, PipelineBuilder, PredictionRequest, PrefixGenerator, SessionGenerator,
+    SpellExpander, UserDictionaryGenerator, WeightedRanker,
 };
 use crate::traits::{Dictionary, SpellChecker};
-use crate::pipeline::{
-    BasicFeatureExtractor, LimitProcessor, CapitalizationProcessor, WeightedRanker, PipelineBuilder, PredictionRequest,
-    PrefixGenerator, SessionGenerator, UserDictionaryGenerator, ContextGenerator, SpellExpander, FuzzyExpander
-};
-use typeforge_common::config::RankingConfig;
 use arc_swap::ArcSwap;
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
+use typeforge_common::config::RankingConfig;
 use typeforge_protocol::{PredictRequest, Prediction, PredictionSource};
 
 pub struct TypeForgeEngine {
@@ -82,7 +81,9 @@ impl TypeForgeEngine {
             )))
             .ranker(Box::new(WeightedRanker::new(config_arc)))
             .postprocessor(Box::new(CapitalizationProcessor::new()))
-            .postprocessor(Box::new(LimitProcessor::new(ranking_config.candidate_limit)))
+            .postprocessor(Box::new(LimitProcessor::new(
+                ranking_config.candidate_limit,
+            )))
             .build();
 
         Ok(Self {
@@ -269,7 +270,13 @@ mod tests {
     #[test]
     fn test_engine_predictions_and_normalization() {
         let (dict_path, l_db_path, t_db_path) = setup_dummy_assets();
-        let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, typeforge_common::config::RankingConfig::default()).unwrap();
+        let engine = TypeForgeEngine::new(
+            dict_path,
+            &l_db_path,
+            &t_db_path,
+            typeforge_common::config::RankingConfig::default(),
+        )
+        .unwrap();
 
         let preds = engine.predict("app", &dummy_req(), 5);
         assert_eq!(preds.len(), 2);

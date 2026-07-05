@@ -63,7 +63,8 @@ impl LearningDb {
 
         let mut context_words_cache = HashMap::new();
         {
-            let mut stmt = conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
+            let mut stmt =
+                conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
             let mut rows = stmt.query([])?;
             while let Some(row) = rows.next()? {
                 let word: String = row.get(0)?;
@@ -113,7 +114,9 @@ impl LearningDb {
                 rusqlite::params![word, ctx, amount],
             )?;
             let mut cache = self.context_words_cache.write().unwrap();
-            *cache.entry((word.to_string(), ctx.to_string())).or_insert(0) += amount;
+            *cache
+                .entry((word.to_string(), ctx.to_string()))
+                .or_insert(0) += amount;
         }
 
         Ok(())
@@ -131,7 +134,12 @@ impl LearningDb {
         }
 
         if let Some(ctx) = context {
-            if let Some(freq) = self.context_words_cache.read().unwrap().get(&(word.to_string(), ctx.to_string())) {
+            if let Some(freq) = self
+                .context_words_cache
+                .read()
+                .unwrap()
+                .get(&(word.to_string(), ctx.to_string()))
+            {
                 total += freq;
             }
         }
@@ -145,15 +153,19 @@ impl LearningDb {
         limit: usize,
     ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let cache = self.user_words_cache.read().unwrap();
-        
+
         let mut candidates: Vec<(&String, &i64)> = cache
             .iter()
             .filter(|(w, _)| w.starts_with(prefix))
             .collect();
-            
+
         candidates.sort_by(|a, b| b.1.cmp(a.1));
-        
-        Ok(candidates.into_iter().take(limit).map(|(w, _)| w.clone()).collect())
+
+        Ok(candidates
+            .into_iter()
+            .take(limit)
+            .map(|(w, _)| w.clone())
+            .collect())
     }
 }
 

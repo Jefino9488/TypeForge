@@ -15,7 +15,12 @@ impl LimitProcessor {
 impl PostProcessor for LimitProcessor {
     fn process(&self, _request: &PredictionRequest, candidates: &mut Vec<ScoredCandidate>) {
         // Sort by confidence (descending)
-        candidates.sort_by(|a, b| b.ranking.confidence.partial_cmp(&a.ranking.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        candidates.sort_by(|a, b| {
+            b.ranking
+                .confidence
+                .partial_cmp(&a.ranking.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         // Truncate to max
         candidates.truncate(self.max_candidates);
     }
@@ -31,7 +36,11 @@ impl CapitalizationProcessor {
 
 impl PostProcessor for CapitalizationProcessor {
     fn process(&self, request: &PredictionRequest, candidates: &mut Vec<ScoredCandidate>) {
-        let prefix = request.text_before_cursor.split_whitespace().last().unwrap_or("");
+        let prefix = request
+            .text_before_cursor
+            .split_whitespace()
+            .last()
+            .unwrap_or("");
         if prefix.is_empty() {
             return;
         }

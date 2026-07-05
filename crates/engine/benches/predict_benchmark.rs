@@ -1,9 +1,5 @@
-use bytemuck::bytes_of;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
-use typeforge_common::dict_format::{AlphaIndex, DictionaryEntry, DictionaryHeader};
 use typeforge_common::config::RankingConfig;
 use typeforge_engine::engine::TypeForgeEngine;
 
@@ -12,12 +8,12 @@ fn get_real_dictionary_path() -> String {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
     let mut path = PathBuf::from(manifest_dir);
     path.push("../../assets/dictionary.bin");
-    
+
     if !path.exists() {
         // Fallback for when running from workspace root
         path = PathBuf::from("assets/dictionary.bin");
     }
-    
+
     path.to_string_lossy().to_string()
 }
 
@@ -45,10 +41,10 @@ fn dummy_req(prefix: &str) -> typeforge_protocol::PredictRequest {
 fn criterion_benchmark(c: &mut Criterion) {
     let dict_path = get_real_dictionary_path();
     let (l_db_path, t_db_path) = setup_temp_dbs();
-    
+
     let ranking_config = RankingConfig::default();
     let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, ranking_config).unwrap();
-    
+
     // Create a realistic request with text_before_cursor
     let mut req = dummy_req("prog");
     req.text_before_cursor = "We need a new prog".to_string();

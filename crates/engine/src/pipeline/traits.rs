@@ -10,11 +10,21 @@ pub trait CandidateExpander: Send + Sync {
 }
 
 pub trait FeatureExtractor: Send + Sync {
-    fn extract(&self, request: &PredictionRequest, candidate: &RawCandidate, features: &mut FeatureSet);
+    fn extract(
+        &self,
+        request: &PredictionRequest,
+        candidate: &RawCandidate,
+        features: &mut FeatureSet,
+    );
 }
 
 pub trait RankingStrategy: Send + Sync {
-    fn score(&self, request: &PredictionRequest, candidate: &RawCandidate, features: &FeatureSet) -> RankingResult;
+    fn score(
+        &self,
+        request: &PredictionRequest,
+        candidate: &RawCandidate,
+        features: &FeatureSet,
+    ) -> RankingResult;
 }
 
 pub trait PostProcessor: Send + Sync {
