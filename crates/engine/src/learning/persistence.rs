@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::error::Error;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
