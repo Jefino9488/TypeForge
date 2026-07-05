@@ -1,9 +1,13 @@
 use rusqlite::Connection;
+use std::collections::HashMap;
 use std::error::Error;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 
 pub struct LearningDb {
     conn: Mutex<Connection>,
+    // In-Memory Caches for hot-path zero-SQLite predictions
+    user_words_cache: RwLock<HashMap<String, i64>>,
+    context_words_cache: RwLock<HashMap<(String, String), i64>>,
 }
 
 impl LearningDb {
@@ -45,8 +49,35 @@ impl LearningDb {
             [],
         )?;
 
+        // Load all data into in-memory caches to avoid SQLite on the hot path
+        let mut user_words_cache = HashMap::new();
+        {
+            let mut stmt = conn.prepare("SELECT word, frequency FROM user_words")?;
+            let mut rows = stmt.query([])?;
+            while let Some(row) = rows.next()? {
+                let word: String = row.get(0)?;
+                let freq: i64 = row.get(1)?;
+                user_words_cache.insert(word, freq);
+            }
+        }
+
+        let mut context_words_cache = HashMap::new();
+        {
+            let mut stmt =
+                conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
+            let mut rows = stmt.query([])?;
+            while let Some(row) = rows.next()? {
+                let word: String = row.get(0)?;
+                let ctx: String = row.get(1)?;
+                let freq: i64 = row.get(2)?;
+                context_words_cache.insert((word, ctx), freq);
+            }
+        }
+
         Ok(Self {
             conn: Mutex::new(conn),
+            user_words_cache: RwLock::new(user_words_cache),
+            context_words_cache: RwLock::new(context_words_cache),
         })
     }
 
@@ -70,12 +101,22 @@ impl LearningDb {
             rusqlite::params![word, amount, now],
         )?;
 
+        // Update in-memory caches
+        {
+            let mut cache = self.user_words_cache.write().unwrap();
+            *cache.entry(word.to_string()).or_insert(0) += amount;
+        }
+
         if let Some(ctx) = context {
             conn.execute(
                 "INSERT INTO context_frequencies (word, context, frequency) VALUES (?1, ?2, ?3)
                  ON CONFLICT(word, context) DO UPDATE SET frequency = frequency + ?3",
                 rusqlite::params![word, ctx, amount],
             )?;
+            let mut cache = self.context_words_cache.write().unwrap();
+            *cache
+                .entry((word.to_string(), ctx.to_string()))
+                .or_insert(0) += amount;
         }
 
         Ok(())
@@ -86,26 +127,20 @@ impl LearningDb {
         word: &str,
         context: Option<&str>,
     ) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let conn = self.conn.lock().unwrap();
-
         let mut total = 0i64;
 
-        if let Ok(freq) = conn.query_row(
-            "SELECT frequency FROM user_words WHERE word = ?1",
-            rusqlite::params![word],
-            |row| row.get::<usize, i64>(0),
-        ) {
+        if let Some(freq) = self.user_words_cache.read().unwrap().get(word) {
             total += freq;
         }
 
         if let Some(ctx) = context
-            && let Ok(ctx_freq) = conn.query_row(
-                "SELECT frequency FROM context_frequencies WHERE word = ?1 AND context = ?2",
-                rusqlite::params![word, ctx],
-                |row| row.get::<usize, i64>(0),
-            )
+            && let Some(freq) = self
+                .context_words_cache
+                .read()
+                .unwrap()
+                .get(&(ctx.to_string(), word.to_string()))
         {
-            total += ctx_freq;
+            total += freq;
         }
 
         Ok(total)
@@ -116,19 +151,20 @@ impl LearningDb {
         prefix: &str,
         limit: usize,
     ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT word FROM user_words WHERE word LIKE ?1 ORDER BY frequency DESC LIMIT ?2",
-        )?;
-        let prefix_like = format!("{}%", prefix);
+        let cache = self.user_words_cache.read().unwrap();
 
-        let mut rows = stmt.query(rusqlite::params![prefix_like, limit])?;
-        let mut candidates = Vec::new();
-        while let Some(row) = rows.next()? {
-            candidates.push(row.get(0)?);
-        }
+        let mut candidates: Vec<(&String, &i64)> = cache
+            .iter()
+            .filter(|(w, _)| w.starts_with(prefix))
+            .collect();
 
-        Ok(candidates)
+        candidates.sort_by(|a, b| b.1.cmp(a.1));
+
+        Ok(candidates
+            .into_iter()
+            .take(limit)
+            .map(|(w, _)| w.clone())
+            .collect())
     }
 }
 

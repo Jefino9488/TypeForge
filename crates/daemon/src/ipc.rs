@@ -109,7 +109,12 @@ mod tests {
         header_bytes[0..8].copy_from_slice(b"TYPEDICT");
         std::io::Write::write_all(&mut file, &header_bytes).unwrap();
 
-        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap());
+        let config = typeforge_common::config::RankingConfig {
+            candidate_limit: 5,
+            ..Default::default()
+        };
+        let engine =
+            Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, config).unwrap());
 
         tokio::spawn(async move {
             handle_client(server, engine).await;
