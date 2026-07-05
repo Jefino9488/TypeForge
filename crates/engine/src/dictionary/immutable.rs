@@ -79,10 +79,10 @@ impl ImmutableDictionary {
         // Actually, since I need exact match, let's just scan for now or check if prediction has it.
         // If predict returns exact match, it contains it.
         for entry in entries {
-            if let Some(s) = self.get_string(entry) {
-                if s == word {
-                    return true;
-                }
+            if let Some(s) = self.get_string(entry)
+                && s == word
+            {
+                return true;
             }
         }
         false

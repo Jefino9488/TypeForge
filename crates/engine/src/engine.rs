@@ -80,9 +80,9 @@ impl TypeForgeEngine {
                 Arc::clone(&spell_checker_arc),
                 ranking_config.candidate_limit,
             )))
-            .expander(Box::new(SegmentationExpander::new(
-                Arc::clone(&immutable_arc),
-            )))
+            .expander(Box::new(SegmentationExpander::new(Arc::clone(
+                &immutable_arc,
+            ))))
             .feature(Box::new(BasicFeatureExtractor::new(
                 Arc::clone(&learner),
                 Arc::clone(&immutable_arc),
@@ -161,7 +161,7 @@ impl TypeForgeEngine {
         let request = PredictionRequest {
             text_before_cursor: req.text_before_cursor.clone(),
             text_after_cursor: req.text_after_cursor.clone(),
-            cursor_position: req.cursor_position as usize,
+            cursor_position: req.cursor_position,
             application: req.application.clone().unwrap_or_default(),
             language: None,
             timestamp: SystemTime::now()

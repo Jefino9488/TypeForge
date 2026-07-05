@@ -197,7 +197,7 @@ impl LearningDb {
             context: context.to_string(),
         };
         let mut cache = self.ngram_cache.write().unwrap();
-        let entries = cache.entry(key).or_insert_with(Vec::new);
+        let entries = cache.entry(key).or_default();
 
         if let Some(entry) = entries.iter_mut().find(|e| e.prediction == prediction) {
             entry.frequency += weight;
@@ -209,7 +209,7 @@ impl LearningDb {
         }
 
         // Re-sort the entries by frequency descending
-        entries.sort_by(|a, b| b.frequency.cmp(&a.frequency));
+        entries.sort_by_key(|b| std::cmp::Reverse(b.frequency));
 
         Ok(())
     }

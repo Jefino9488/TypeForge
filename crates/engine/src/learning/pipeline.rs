@@ -79,7 +79,15 @@ impl LearningPipeline {
     pub fn new() -> Self {
         Self { stages: Vec::new() }
     }
+}
 
+impl Default for LearningPipeline {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl LearningPipeline {
     pub fn add_stage(mut self, stage: Box<dyn LearnerStage>) -> Self {
         self.stages.push(stage);
         self

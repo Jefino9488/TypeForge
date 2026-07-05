@@ -1,4 +1,5 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 use std::path::PathBuf;
 use typeforge_common::config::RankingConfig;
 use typeforge_engine::engine::TypeForgeEngine;

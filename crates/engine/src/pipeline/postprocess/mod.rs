@@ -75,6 +75,12 @@ impl DiversityProcessor {
     }
 }
 
+impl Default for DiversityProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PostProcessor for DiversityProcessor {
     fn process(&self, _request: &PredictionRequest, candidates: &mut Vec<ScoredCandidate>) {
         let mut unique_stems = std::collections::HashSet::new();
