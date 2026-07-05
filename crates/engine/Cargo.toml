@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 typeforge-protocol = { path = "../protocol" }
-rusqlite = "0.31.0"
+rusqlite = "0.40.1"
 symspell = "0.5.2"
 tracing = "0.1.40"
 flate2 = "1.0.30"
