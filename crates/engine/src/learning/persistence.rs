@@ -1,13 +1,25 @@
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::error::Error;
-use std::sync::{Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+pub struct NGramKey {
+    pub context: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct NGramEntry {
+    pub prediction: String,
+    pub frequency: u32,
+}
 
 pub struct LearningDb {
     conn: Mutex<Connection>,
-    // In-Memory Caches for hot-path zero-SQLite predictions
     user_words_cache: RwLock<HashMap<String, i64>>,
     context_words_cache: RwLock<HashMap<(String, String), i64>>,
+    pub ngram_cache: RwLock<HashMap<NGramKey, Vec<NGramEntry>>>,
 }
 
 impl LearningDb {
@@ -49,6 +61,18 @@ impl LearningDb {
             [],
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS ngrams (
+                context TEXT NOT NULL,
+                prediction TEXT NOT NULL,
+                order_num INTEGER NOT NULL DEFAULT 2,
+                frequency INTEGER NOT NULL DEFAULT 1,
+                last_updated INTEGER NOT NULL,
+                PRIMARY KEY (context, prediction)
+            )",
+            [],
+        )?;
+
         // Load all data into in-memory caches to avoid SQLite on the hot path
         let mut user_words_cache = HashMap::new();
         {
@@ -63,7 +87,8 @@ impl LearningDb {
 
         let mut context_words_cache = HashMap::new();
         {
-            let mut stmt = conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
+            let mut stmt =
+                conn.prepare("SELECT word, context, frequency FROM context_frequencies")?;
             let mut rows = stmt.query([])?;
             while let Some(row) = rows.next()? {
                 let word: String = row.get(0)?;
@@ -73,10 +98,36 @@ impl LearningDb {
             }
         }
 
+        // Populate in-memory NGram cache
+        let mut ngram_cache = HashMap::new();
+        {
+            let mut stmt = conn.prepare(
+                "SELECT context, prediction, frequency FROM ngrams ORDER BY frequency DESC",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let context: String = row.get(0)?;
+                let prediction: String = row.get(1)?;
+                let frequency: u32 = row.get(2)?;
+                Ok((context, prediction, frequency))
+            })?;
+
+            for row in rows.flatten() {
+                let key = NGramKey { context: row.0 };
+                ngram_cache
+                    .entry(key)
+                    .or_insert_with(Vec::new)
+                    .push(NGramEntry {
+                        prediction: row.1,
+                        frequency: row.2,
+                    });
+            }
+        }
+
         Ok(Self {
             conn: Mutex::new(conn),
             user_words_cache: RwLock::new(user_words_cache),
             context_words_cache: RwLock::new(context_words_cache),
+            ngram_cache: RwLock::new(ngram_cache),
         })
     }
 
@@ -113,8 +164,52 @@ impl LearningDb {
                 rusqlite::params![word, ctx, amount],
             )?;
             let mut cache = self.context_words_cache.write().unwrap();
-            *cache.entry((word.to_string(), ctx.to_string())).or_insert(0) += amount;
+            *cache
+                .entry((word.to_string(), ctx.to_string()))
+                .or_insert(0) += amount;
         }
+
+        Ok(())
+    }
+
+    pub fn increase_ngram_weight(
+        &self,
+        context: &str,
+        prediction: &str,
+        weight: u32,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "INSERT INTO ngrams (context, prediction, order_num, frequency, last_updated)
+                 VALUES (?1, ?2, 2, ?3, ?4)
+                 ON CONFLICT(context, prediction) DO UPDATE SET 
+                 frequency = frequency + ?3,
+                 last_updated = ?4",
+                rusqlite::params![context, prediction, weight, now],
+            )?;
+        }
+
+        // Update in-memory cache
+        let key = NGramKey {
+            context: context.to_string(),
+        };
+        let mut cache = self.ngram_cache.write().unwrap();
+        let entries = cache.entry(key).or_insert_with(Vec::new);
+
+        if let Some(entry) = entries.iter_mut().find(|e| e.prediction == prediction) {
+            entry.frequency += weight;
+        } else {
+            entries.push(NGramEntry {
+                prediction: prediction.to_string(),
+                frequency: weight,
+            });
+        }
+
+        // Re-sort the entries by frequency descending
+        entries.sort_by(|a, b| b.frequency.cmp(&a.frequency));
 
         Ok(())
     }
@@ -131,7 +226,12 @@ impl LearningDb {
         }
 
         if let Some(ctx) = context {
-            if let Some(freq) = self.context_words_cache.read().unwrap().get(&(word.to_string(), ctx.to_string())) {
+            if let Some(freq) = self
+                .context_words_cache
+                .read()
+                .unwrap()
+                .get(&(word.to_string(), ctx.to_string()))
+            {
                 total += freq;
             }
         }
@@ -145,15 +245,35 @@ impl LearningDb {
         limit: usize,
     ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let cache = self.user_words_cache.read().unwrap();
-        
+
         let mut candidates: Vec<(&String, &i64)> = cache
             .iter()
             .filter(|(w, _)| w.starts_with(prefix))
             .collect();
-            
+
         candidates.sort_by(|a, b| b.1.cmp(a.1));
-        
-        Ok(candidates.into_iter().take(limit).map(|(w, _)| w.clone()).collect())
+
+        Ok(candidates
+            .into_iter()
+            .take(limit)
+            .map(|(w, _)| w.clone())
+            .collect())
+    }
+
+    pub fn get_ngrams(&self, context: &str, limit: usize) -> Vec<String> {
+        let key = NGramKey {
+            context: context.to_string(),
+        };
+        let cache = self.ngram_cache.read().unwrap();
+        if let Some(entries) = cache.get(&key) {
+            entries
+                .iter()
+                .take(limit)
+                .map(|e| e.prediction.clone())
+                .collect()
+        } else {
+            Vec::new()
+        }
     }
 }
 

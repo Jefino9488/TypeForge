@@ -1,4 +1,7 @@
 use crate::learning::persistence::{LearningDb, TelemetryDb};
+use crate::learning::pipeline::{
+    CommitEvent, LearningPipeline, NGramLearner, SessionLearner, WordLearner,
+};
 use crate::learning::scorer::ScorePipeline;
 use crate::learning::session::SessionMemory;
 use std::error::Error;
@@ -26,6 +29,7 @@ pub struct Learner {
     pub telemetry_db: Option<Arc<TelemetryDb>>,
     pub session_memory: Arc<SessionMemory>,
     pub pipeline: ScorePipeline,
+    learning_pipeline: Arc<LearningPipeline>,
 }
 
 impl Learner {
@@ -35,12 +39,20 @@ impl Learner {
         session_memory: Arc<SessionMemory>,
         config: LearningConfig,
     ) -> Self {
+        let learning_pipeline = Arc::new(
+            LearningPipeline::new()
+                .add_stage(Box::new(WordLearner::new(learning_db.clone())))
+                .add_stage(Box::new(NGramLearner::new(learning_db.clone())))
+                .add_stage(Box::new(SessionLearner::new(session_memory.clone()))),
+        );
+
         Self {
             config,
             learning_db: learning_db.clone(),
             telemetry_db,
             session_memory: session_memory.clone(),
             pipeline: ScorePipeline::new(learning_db, session_memory),
+            learning_pipeline,
         }
     }
 
@@ -54,11 +66,13 @@ impl Learner {
             return Ok(());
         }
 
-        // Add to session memory
-        self.session_memory.add(word);
-
-        // Positive reinforcement in the learning database
-        self.learning_db.increase_weight(word, context, 10)?;
+        self.learning_pipeline.process_event(&CommitEvent {
+            word: word.to_string(),
+            previous_word: context.map(|s| s.to_string()),
+            context: context.map(|s| s.to_string()),
+            is_accepted_prediction: true,
+            is_common_word: false,
+        });
 
         Ok(())
     }
@@ -74,15 +88,13 @@ impl Learner {
             return Ok(());
         }
 
-        self.session_memory.add(word);
-
-        if is_common {
-            // "Common dictionary word typed -> no learning needed."
-            return Ok(());
-        }
-
-        // Smaller positive reinforcement for manual typing
-        self.learning_db.increase_weight(word, context, 2)?;
+        self.learning_pipeline.process_event(&CommitEvent {
+            word: word.to_string(),
+            previous_word: context.map(|s| s.to_string()), // We use context as previous word for now since Fcitx doesn't send separate prev word.
+            context: context.map(|s| s.to_string()),
+            is_accepted_prediction: false,
+            is_common_word: is_common,
+        });
 
         Ok(())
     }
@@ -93,6 +105,10 @@ impl Learner {
         limit: usize,
     ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         self.learning_db.get_candidates_by_prefix(prefix, limit)
+    }
+
+    pub fn get_ngrams(&self, context: &str, limit: usize) -> Vec<String> {
+        self.learning_db.get_ngrams(context, limit)
     }
 
     pub fn set_learning_enabled(&self, enabled: bool) {
