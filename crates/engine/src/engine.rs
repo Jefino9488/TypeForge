@@ -1,20 +1,26 @@
 use crate::dictionary::immutable::ImmutableDictionary;
 use crate::dictionary::symspell_impl::SymSpellChecker;
-use crate::learning::{
-    Learner, LearningConfig, LearningDb, ScoreContext, SessionMemory, TelemetryDb,
+use crate::learning::{Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb};
+use crate::pipeline::{
+    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, FuzzyExpander,
+    LimitProcessor, PipelineBuilder, PredictionRequest, PrefixGenerator, SessionGenerator,
+    SpellExpander, UserDictionaryGenerator, WeightedRanker,
 };
-use crate::traits::{Dictionary, Predictor, SpellChecker};
+use crate::traits::{Dictionary, SpellChecker};
 use arc_swap::ArcSwap;
 use std::sync::{Arc, RwLock};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
+use typeforge_common::config::RankingConfig;
 use typeforge_protocol::{PredictRequest, Prediction, PredictionSource};
 
 pub struct TypeForgeEngine {
     immutable: Arc<ArcSwap<ImmutableDictionary>>,
     spell_checker: Arc<RwLock<SymSpellChecker>>,
     learner: Arc<Learner>,
+    pipeline: crate::pipeline::builder::Pipeline,
     immutable_path: String,
-    candidate_limit: usize,
+    ranking_config: RankingConfig,
 }
 
 impl TypeForgeEngine {
@@ -22,7 +28,7 @@ impl TypeForgeEngine {
         immutable_path: String,
         learning_db_path: &str,
         telemetry_db_path: &str,
-        candidate_limit: usize,
+        ranking_config: RankingConfig,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let mut immutable = ImmutableDictionary::new(immutable_path.clone());
         immutable.load()?;
@@ -40,77 +46,90 @@ impl TypeForgeEngine {
             LearningConfig::default(),
         ));
 
+        let immutable_arc = Arc::new(ArcSwap::from_pointee(immutable));
+        let spell_checker_arc = Arc::new(RwLock::new(spell_checker));
+        let config_arc = Arc::new(ranking_config.clone());
+
+        let pipeline = PipelineBuilder::new()
+            .generator(Box::new(PrefixGenerator::new(
+                Arc::clone(&immutable_arc),
+                ranking_config.candidate_limit * 2,
+            )))
+            .generator(Box::new(SessionGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit * 2,
+            )))
+            .generator(Box::new(UserDictionaryGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit,
+            )))
+            .generator(Box::new(ContextGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit,
+            )))
+            .expander(Box::new(SpellExpander::new(
+                Arc::clone(&spell_checker_arc),
+                ranking_config.candidate_limit,
+            )))
+            .expander(Box::new(FuzzyExpander::new(
+                Arc::clone(&spell_checker_arc),
+                ranking_config.candidate_limit,
+            )))
+            .feature(Box::new(BasicFeatureExtractor::new(
+                Arc::clone(&learner),
+                Arc::clone(&immutable_arc),
+            )))
+            .ranker(Box::new(WeightedRanker::new(config_arc)))
+            .postprocessor(Box::new(CapitalizationProcessor::new()))
+            .postprocessor(Box::new(LimitProcessor::new(
+                ranking_config.candidate_limit,
+            )))
+            .build();
+
         Ok(Self {
-            immutable: Arc::new(ArcSwap::from_pointee(immutable)),
-            spell_checker: Arc::new(RwLock::new(spell_checker)),
+            immutable: immutable_arc,
+            spell_checker: spell_checker_arc,
             learner,
+            pipeline,
             immutable_path,
-            candidate_limit,
+            ranking_config,
         })
     }
 
     pub fn get_candidate_limit(&self) -> usize {
-        self.candidate_limit
+        self.ranking_config.candidate_limit
     }
 
-    pub fn predict(&self, prefix: &str, req: &PredictRequest, limit: usize) -> Vec<Prediction> {
+    pub fn predict(&self, prefix: &str, req: &PredictRequest, _limit: usize) -> Vec<Prediction> {
         let is_all_caps = !prefix.is_empty()
             && prefix
                 .chars()
                 .all(|c| !c.is_alphabetic() || c.is_uppercase());
         let is_capitalized = !prefix.is_empty() && prefix.chars().next().unwrap().is_uppercase();
 
-        let search_prefix = prefix.to_lowercase();
-
-        let immut = self.immutable.load();
-
-        // 1. Get raw candidates from the dictionary prior
-        let mut candidates = immut.predict(&search_prefix, req, limit * 2);
-
-        // 1b. Get raw candidates from the learning database
-        if let Ok(learned_words) = self
-            .learner
-            .get_candidates_by_prefix(&search_prefix, limit * 2)
-        {
-            for word in learned_words {
-                if !candidates.iter().any(|c| c.text == word) {
-                    candidates.push(Prediction {
-                        text: word,
-                        score: 0.0, // Base score is 0, will be updated by pipeline
-                        source: PredictionSource::User,
-                    });
-                }
-            }
-        }
-
-        // 1c. Spell check fallback if few candidates
-        if candidates.len() < limit && search_prefix.len() >= 3 {
-            let corrections = self.correct_spelling(&search_prefix, limit - candidates.len());
-            for mut c in corrections {
-                if !candidates.iter().any(|existing| existing.text == c.text) {
-                    c.source = PredictionSource::SpellCorrection;
-                    // Boost the spelling correction score slightly so it ranks decently
-                    // alongside unigram frequencies.
-                    c.score *= 100.0;
-                    candidates.push(c);
-                }
-            }
-        }
-
-        // 2. Score and Rank through the Pipeline
-        let ctx = ScoreContext {
-            application: req.application.as_deref(),
+        let request = PredictionRequest {
+            text_before_cursor: req.text_before_cursor.clone(),
+            text_after_cursor: req.text_after_cursor.clone(),
+            cursor_position: req.cursor_position,
+            application: req.application.clone().unwrap_or_default(),
+            language: None,
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
         };
-        self.learner.pipeline.rank(&mut candidates, &ctx);
 
-        // 3. Normalize scores to 0.0 - 1.0 (Optional but helpful for debug/UI)
-        let max_score = candidates.first().map(|c| c.score).unwrap_or(1.0).max(1.0);
-        for c in &mut candidates {
-            c.score /= max_score;
-        }
+        let result = self.pipeline.execute(&request);
 
-        // 4. Take top limit
-        candidates.truncate(limit);
+        let mut candidates: Vec<Prediction> = result
+            .candidates
+            .into_iter()
+            .map(|c| Prediction {
+                text: c.candidate.text,
+                score: c.ranking.score,
+                source: PredictionSource::User, // Map CandidateSource to PredictionSource if needed
+            })
+            .collect();
 
         // 5. Restore casing
         if is_all_caps {
@@ -239,10 +258,10 @@ mod tests {
 
     fn dummy_req() -> PredictRequest {
         PredictRequest {
-            prefix: "".to_string(),
-            text_before_cursor: "".to_string(),
+            prefix: "app".to_string(),
+            text_before_cursor: "app".to_string(),
             text_after_cursor: "".to_string(),
-            cursor_position: 0,
+            cursor_position: 3,
             application: None,
             language: None,
         }
@@ -251,14 +270,19 @@ mod tests {
     #[test]
     fn test_engine_predictions_and_normalization() {
         let (dict_path, l_db_path, t_db_path) = setup_dummy_assets();
-        let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap();
+        let engine = TypeForgeEngine::new(
+            dict_path,
+            &l_db_path,
+            &t_db_path,
+            typeforge_common::config::RankingConfig::default(),
+        )
+        .unwrap();
 
         let preds = engine.predict("app", &dummy_req(), 5);
         assert_eq!(preds.len(), 2);
         assert_eq!(preds[0].text, "apple");
-        assert_eq!(preds[0].score, 1.0); // Normalized max
         assert_eq!(preds[1].text, "application");
-        assert!((preds[1].score - 0.055555556).abs() < 1e-6); // length-penalized score
+        assert!(preds[0].score > preds[1].score);
 
         // Test user learning (accepted prediction)
         engine.learn("approach", None, true).unwrap();

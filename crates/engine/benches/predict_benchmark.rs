@@ -1,59 +1,30 @@
-use bytemuck::bytes_of;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use std::fs::File;
-use std::io::Write;
-use typeforge_common::dict_format::{AlphaIndex, DictionaryEntry, DictionaryHeader};
+use std::path::PathBuf;
+use typeforge_common::config::RankingConfig;
 use typeforge_engine::engine::TypeForgeEngine;
 
-fn setup_dummy_assets() -> (String, String, String) {
+fn get_real_dictionary_path() -> String {
+    // Attempt to locate the real dictionary in the repo
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let mut path = PathBuf::from(manifest_dir);
+    path.push("../../assets/dictionary.bin");
+
+    if !path.exists() {
+        // Fallback for when running from workspace root
+        path = PathBuf::from("assets/dictionary.bin");
+    }
+
+    path.to_string_lossy().to_string()
+}
+
+fn setup_temp_dbs() -> (String, String) {
     let test_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
     std::fs::create_dir_all(&test_dir).unwrap();
 
-    let dict_path = test_dir.join("dict.bin").to_string_lossy().to_string();
     let l_db_path = test_dir.join("learning.db").to_string_lossy().to_string();
     let t_db_path = test_dir.join("telemetry.db").to_string_lossy().to_string();
 
-    let mut file = File::create(&dict_path).unwrap();
-    let mut header = DictionaryHeader {
-        word_count: 10_000,
-        ..Default::default()
-    };
-
-    let mut alpha: AlphaIndex = [0; 26];
-    for item in alpha.iter_mut().take(19) {
-        *item = 0;
-    }
-    alpha[19] = 0; // 't' starts at index 0, all words are testword{}
-    for item in alpha.iter_mut().skip(20) {
-        *item = 10_000;
-    }
-
-    let mut entries = Vec::with_capacity(10_000);
-    let mut pool = Vec::new();
-
-    for i in 0..10_000 {
-        let word = format!("testword{:04}", i); // testword0000 to testword9999 for proper sorting
-        let entry = DictionaryEntry {
-            offset: pool.len() as u32,
-            length: word.len() as u16,
-            first_char: b't' as u16,
-            frequency: (10_000 - i) as u32,
-        };
-        entries.push(entry);
-        pool.extend_from_slice(word.as_bytes());
-    }
-
-    header.index_offset = 48;
-    header.strings_offset = 48 + 104 + (12 * 10_000);
-    header.checksum_offset = header.strings_offset + pool.len() as u64;
-
-    file.write_all(bytes_of(&header)).unwrap();
-    file.write_all(bytemuck::cast_slice(&alpha)).unwrap();
-    file.write_all(bytemuck::cast_slice(&entries)).unwrap();
-    file.write_all(&pool).unwrap();
-    file.write_all(&[0u8; 32]).unwrap(); // Dummy checksum
-
-    (dict_path, l_db_path, t_db_path)
+    (l_db_path, t_db_path)
 }
 
 fn dummy_req(prefix: &str) -> typeforge_protocol::PredictRequest {
@@ -68,12 +39,18 @@ fn dummy_req(prefix: &str) -> typeforge_protocol::PredictRequest {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let (dict_path, l_db_path, t_db_path) = setup_dummy_assets();
-    let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap();
-    let req = dummy_req("testword50");
+    let dict_path = get_real_dictionary_path();
+    let (l_db_path, t_db_path) = setup_temp_dbs();
 
-    c.bench_function("predict_th", |b| {
-        b.iter(|| engine.predict(black_box("testword50"), &req, 5))
+    let ranking_config = RankingConfig::default();
+    let engine = TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, ranking_config).unwrap();
+
+    // Create a realistic request with text_before_cursor
+    let mut req = dummy_req("prog");
+    req.text_before_cursor = "We need a new prog".to_string();
+
+    c.bench_function("predict_prog", |b| {
+        b.iter(|| engine.predict(black_box("prog"), &req, 5))
     });
 }
 
