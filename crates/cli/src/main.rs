@@ -23,6 +23,20 @@ enum Commands {
         #[arg(short, long)]
         prefix: String,
     },
+    Explain {
+        prefix: String,
+        #[arg(long)]
+        app: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    Benchmark {
+        prefix: String,
+    },
+    Replay {
+        #[arg(short, long)]
+        file: String,
+    },
     Learn {
         #[arg(short, long)]
         word: String,
@@ -92,6 +106,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 )
                 .await?
             }
+            Commands::Replay { file } => {
+                send_replay_request(&socket_path, file).await?;
+            }
+            Commands::Explain { prefix, app, json } => {
+                send_explain_request(&socket_path, prefix, app, json).await?
+            }
+            Commands::Benchmark { prefix } => send_benchmark_request(&socket_path, prefix).await?,
             Commands::Learn { word, freq } => {
                 send_request(
                     &socket_path,
@@ -250,4 +271,186 @@ async fn run_info(socket_path: &str) {
 
     println!("{}", "Fcitx:".bold());
     println!("{}", fcitx_status);
+}
+
+async fn send_explain_request(
+    socket_path: &str,
+    prefix: String,
+    app: Option<String>,
+    json: bool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut stream = UnixStream::connect(socket_path).await?;
+    let req = Request::Explain(PredictRequest {
+        prefix: prefix.clone(),
+        text_before_cursor: prefix.clone(),
+        text_after_cursor: String::new(),
+        cursor_position: 0,
+        application: app,
+        language: None,
+    });
+
+    let env = ProtocolMessage {
+        version: 1,
+        request_id: Uuid::new_v4(),
+        payload: req,
+    };
+
+    let req_str = serde_json::to_string(&env)?;
+    stream.write_all(req_str.as_bytes()).await?;
+
+    let mut buf = vec![0; 65536]; // Trace can be large
+    let n = stream.read(&mut buf).await?;
+    let resp: ProtocolMessage<Response> = serde_json::from_slice(&buf[0..n])?;
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&resp)?);
+        return Ok(());
+    }
+
+    if let Response::Explain { trace } = resp.payload {
+        println!(
+            "{}",
+            format!("Pipeline Version: {}", trace.pipeline_version).bright_black()
+        );
+
+        for candidate in trace.candidates {
+            println!("\nCandidate\t\t{}", candidate.text.bold().green());
+
+            println!("\nGenerators");
+            for g in candidate.generators {
+                println!("{} {}", "✓".green(), g);
+            }
+
+            println!("\nExpanders");
+            for exp in candidate.expanders {
+                println!("{} {}", "✓".green(), exp);
+            }
+
+            println!("\nFeatures");
+            println!(
+                "{:20} {:.2}",
+                "Base Frequency", candidate.features.base_frequency
+            );
+            println!(
+                "{:20} {:.2}",
+                "User Frequency", candidate.features.user_frequency
+            );
+            println!("{:20} {:.2}", "Context", candidate.features.context_match);
+            println!("{:20} {:.2}", "Session", candidate.features.session_match);
+            println!(
+                "{:20} {:.2}",
+                "Edit Distance", candidate.features.edit_distance
+            );
+
+            println!("\nScore\t\t\t{:.2}", candidate.score);
+            println!("Confidence\t\t{:.2}", candidate.confidence);
+            println!("Rank\t\t\t{}", candidate.rank);
+            println!("{}", "─".repeat(40).bright_black());
+        }
+    } else {
+        println!("{:#?}", resp);
+    }
+
+    Ok(())
+}
+
+async fn send_benchmark_request(
+    socket_path: &str,
+    prefix: String,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut stream = UnixStream::connect(socket_path).await?;
+    let req = Request::Explain(PredictRequest {
+        prefix: prefix.clone(),
+        text_before_cursor: prefix.clone(),
+        text_after_cursor: String::new(),
+        cursor_position: 0,
+        application: None,
+        language: None,
+    });
+
+    let env = ProtocolMessage {
+        version: 1,
+        request_id: Uuid::new_v4(),
+        payload: req,
+    };
+
+    let req_str = serde_json::to_string(&env)?;
+    stream.write_all(req_str.as_bytes()).await?;
+
+    let mut buf = vec![0; 65536];
+    let n = stream.read(&mut buf).await?;
+    let resp: ProtocolMessage<Response> = serde_json::from_slice(&buf[0..n])?;
+
+    if let Response::Explain { trace } = resp.payload {
+        let t = trace.timings;
+        println!("{:20} {} μs", "Generator", t.generators_us);
+        println!("{:20} {} μs", "Expansion", t.expanders_us);
+        println!("{:20} {} μs", "Feature Extraction", t.features_us);
+        println!("{:20} {} μs", "Ranking", t.ranking_us);
+        println!("{:20} {} μs", "Post Processing", t.post_processing_us);
+        println!();
+        println!("{:20} {} μs", "Total", t.total_us);
+    } else {
+        println!("{:#?}", resp);
+    }
+
+    Ok(())
+}
+
+async fn send_replay_request(
+    socket_path: &str,
+    file: String,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let content = std::fs::read_to_string(file)?;
+    let mut stream = UnixStream::connect(socket_path).await?;
+
+    let words: Vec<&str> = content.split_whitespace().collect();
+    let total = words.len();
+    println!("Replaying {} words...", total);
+
+    let start = std::time::Instant::now();
+    let mut count = 0;
+
+    for word in words {
+        // Simulate typing the first 3 characters
+        let prefix = if word.len() > 3 { &word[..3] } else { word };
+
+        let req = Request::Predict(PredictRequest {
+            prefix: prefix.to_string(),
+            text_before_cursor: prefix.to_string(),
+            text_after_cursor: String::new(),
+            cursor_position: 0,
+            application: None,
+            language: None,
+        });
+
+        let env = ProtocolMessage {
+            version: 1,
+            request_id: Uuid::new_v4(),
+            payload: req,
+        };
+
+        let req_str = serde_json::to_string(&env)?;
+        stream.write_all(req_str.as_bytes()).await?;
+
+        let mut buf = vec![0; 65536];
+        let _n = stream.read(&mut buf).await?;
+        count += 1;
+
+        if count % 100 == 0 {
+            print!(".");
+            use std::io::Write;
+            let _ = std::io::stdout().flush();
+        }
+    }
+
+    let duration = start.elapsed();
+    println!("\nReplay finished.");
+    println!("Total words: {}", count);
+    println!("Total time: {:?}", duration);
+    if count > 0 {
+        println!("Average latency: {:?}", duration / count as u32);
+    }
+
+    Ok(())
 }

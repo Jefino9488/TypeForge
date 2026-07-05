@@ -12,6 +12,7 @@ pub struct ProtocolMessage<T> {
 #[serde(tag = "type")]
 pub enum Request {
     Predict(PredictRequest),
+    Explain(PredictRequest),
     Learn(LearnRequest),
     ReloadDictionary,
     SetLearningEnabled(bool),
@@ -48,10 +49,48 @@ pub struct Prediction {
     pub source: PredictionSource,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TimingMetrics {
+    pub generators_us: u64,
+    pub expanders_us: u64,
+    pub features_us: u64,
+    pub ranking_us: u64,
+    pub post_processing_us: u64,
+    pub total_us: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FeatureTrace {
+    pub base_frequency: f32,
+    pub user_frequency: f32,
+    pub context_match: f32,
+    pub session_match: f32,
+    pub edit_distance: f32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CandidateTrace {
+    pub text: String,
+    pub generators: Vec<String>,
+    pub expanders: Vec<String>,
+    pub features: FeatureTrace,
+    pub score: f32,
+    pub confidence: f32,
+    pub rank: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PipelineTrace {
+    pub pipeline_version: u32,
+    pub timings: TimingMetrics,
+    pub candidates: Vec<CandidateTrace>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum Response {
     Predict { predictions: Vec<Prediction> },
+    Explain { trace: PipelineTrace },
     Success,
     Error { code: String, message: String },
 }

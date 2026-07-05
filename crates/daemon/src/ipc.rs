@@ -28,6 +28,10 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
                                     engine.predict(&r.prefix, &r, engine.get_candidate_limit());
                                 Response::Predict { predictions }
                             }
+                            Request::Explain(r) => {
+                                let trace = engine.explain(&r);
+                                Response::Explain { trace }
+                            }
                             Request::Learn(r) => {
                                 let accepted = r.frequency_delta > 0;
                                 // In the future, Fcitx should send `application` in LearnRequest as well
@@ -109,7 +113,11 @@ mod tests {
         header_bytes[0..8].copy_from_slice(b"TYPEDICT");
         std::io::Write::write_all(&mut file, &header_bytes).unwrap();
 
-        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, 5).unwrap());
+        let config = typeforge_common::config::RankingConfig {
+            candidate_limit: 5,
+            ..Default::default()
+        };
+        let engine = Arc::new(TypeForgeEngine::new(dict_path, &l_db_path, &t_db_path, config).unwrap());
 
         tokio::spawn(async move {
             handle_client(server, engine).await;
