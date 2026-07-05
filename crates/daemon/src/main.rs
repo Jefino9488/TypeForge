@@ -2,7 +2,6 @@ mod ipc;
 
 use std::fs;
 use std::sync::{Arc, Mutex};
-use typeforge_engine::pipeline::request::CancellationToken;
 use tokio::net::UnixListener;
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
@@ -10,6 +9,7 @@ use typeforge_common::config::{
     AppConfig, get_learning_db_path, get_socket_path, get_telemetry_db_path,
 };
 use typeforge_engine::engine::TypeForgeEngine;
+use typeforge_engine::pipeline::request::CancellationToken;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

@@ -57,7 +57,7 @@ impl Pipeline {
         // Stage 3: Deduplication & CandidateDiversifier
         let mut seen_texts = HashSet::new();
         let mut seen_stems = HashSet::new();
-        
+
         raw_candidates.retain(|c| {
             let mut text = c.text.to_lowercase();
             if !seen_texts.insert(text.clone()) {
@@ -72,7 +72,7 @@ impl Pipeline {
             } else if text.ends_with('s') && !text.ends_with("ss") {
                 text.truncate(text.len() - 1);
             }
-            
+
             seen_stems.insert(text)
         });
         telemetry.candidates_generated = raw_candidates.len();

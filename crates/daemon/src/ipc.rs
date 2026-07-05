@@ -6,7 +6,11 @@ use typeforge_engine::engine::TypeForgeEngine;
 use typeforge_engine::pipeline::request::CancellationToken;
 use typeforge_protocol::{ProtocolMessage, Request, Response};
 
-pub async fn handle_client(stream: UnixStream, engine: Arc<TypeForgeEngine>, global_token: Arc<Mutex<Option<CancellationToken>>>) {
+pub async fn handle_client(
+    stream: UnixStream,
+    engine: Arc<TypeForgeEngine>,
+    global_token: Arc<Mutex<Option<CancellationToken>>>,
+) {
     let (mut rx_stream, mut tx_stream) = stream.into_split();
     let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(32);
 
@@ -48,7 +52,12 @@ pub async fn handle_client(stream: UnixStream, engine: Arc<TypeForgeEngine>, glo
                                         }
                                         *ct = Some(token.clone());
                                     }
-                                    let predictions = engine_clone.predict(&r.prefix, &r, engine_clone.get_candidate_limit(), token);
+                                    let predictions = engine_clone.predict(
+                                        &r.prefix,
+                                        &r,
+                                        engine_clone.get_candidate_limit(),
+                                        token,
+                                    );
                                     Response::Predict { predictions }
                                 }
                                 Request::Explain(r) => {
@@ -95,7 +104,8 @@ pub async fn handle_client(stream: UnixStream, engine: Arc<TypeForgeEngine>, glo
                             code: "PARSE_ERROR".into(),
                             message: e.to_string(),
                         };
-                        let err_str = serde_json::to_string(&err_resp).unwrap_or_else(|_| "{}".into());
+                        let err_str =
+                            serde_json::to_string(&err_resp).unwrap_or_else(|_| "{}".into());
                         let _ = tx.send(err_str).await;
                     }
                 }

@@ -183,10 +183,14 @@ impl LearningDb {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs() as i64;
-            
+
             for update in batch.drain(..) {
                 match update {
-                    DbUpdate::Word { word, context, amount } => {
+                    DbUpdate::Word {
+                        word,
+                        context,
+                        amount,
+                    } => {
                         let _ = tx.execute(
                             "INSERT INTO user_words (word, frequency, first_seen, last_used, confidence) VALUES (?1, ?2, ?3, ?3, 1.0)
                              ON CONFLICT(word) DO UPDATE SET 
@@ -203,7 +207,11 @@ impl LearningDb {
                             );
                         }
                     }
-                    DbUpdate::NGram { context, prediction, amount } => {
+                    DbUpdate::NGram {
+                        context,
+                        prediction,
+                        amount,
+                    } => {
                         let _ = tx.execute(
                             "INSERT INTO ngrams (context, prediction, order_num, frequency, last_updated)
                              VALUES (?1, ?2, 2, ?3, ?4)

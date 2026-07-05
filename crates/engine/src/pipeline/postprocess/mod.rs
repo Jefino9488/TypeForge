@@ -68,5 +68,3 @@ impl PostProcessor for CapitalizationProcessor {
         }
     }
 }
-
-
