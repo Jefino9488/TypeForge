@@ -16,6 +16,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 memmap2 = "0.9.11"
 bytemuck = { version = "1.25.0", features = ["derive"] }
 typeforge-common = { version = "0.3.0", path = "../common" }
+smallvec = "1.15.2"
 
 [dev-dependencies]
 uuid = { version = "1.8.0", features = ["v4"] }

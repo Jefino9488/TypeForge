@@ -1502,6 +1502,7 @@ dependencies = [
  "memmap2",
  "rusqlite",
  "serde",
+ "smallvec",
  "symspell",
  "tracing",
  "typeforge-common",
