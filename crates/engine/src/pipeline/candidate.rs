@@ -28,14 +28,15 @@ pub struct RawCandidate {
 pub struct FeatureSet {
     pub base_frequency: f32,
     pub user_frequency: f32,
-    pub session_score: f32,
+    pub session_frequency: f32,
     pub context_score: f32,
-    pub ngram_score: f32,
-    pub edit_distance: u8,
-    pub exact_prefix: bool,
     pub prefix_length: u8,
-    pub is_custom: bool,
+    pub exact_prefix: bool,
+    pub edit_distance: u8,
     pub word_length: u8,
+    pub ngram_probability: f32,
+    pub is_custom_word: bool,
+    pub recently_accepted: bool,
 }
 
 #[derive(Debug, Clone)]
