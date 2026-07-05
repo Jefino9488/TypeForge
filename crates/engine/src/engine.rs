@@ -2,9 +2,10 @@ use crate::dictionary::immutable::ImmutableDictionary;
 use crate::dictionary::symspell_impl::SymSpellChecker;
 use crate::learning::{Learner, LearningConfig, LearningDb, SessionMemory, TelemetryDb};
 use crate::pipeline::{
-    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, FuzzyExpander,
-    LimitProcessor, PipelineBuilder, PredictionRequest, PrefixGenerator, SessionGenerator,
-    SpellExpander, UserDictionaryGenerator, WeightedRanker,
+    BasicFeatureExtractor, CapitalizationProcessor, ContextGenerator, DiversityProcessor,
+    FuzzyExpander, LimitProcessor, NoopObserver, PhraseGenerator, PipelineBuilder,
+    PredictionRequest, PrefixGenerator, SegmentationExpander, SessionGenerator, SpellExpander,
+    TraceObserver, UserDictionaryGenerator, WeightedRanker,
 };
 use crate::traits::{Dictionary, SpellChecker};
 use arc_swap::ArcSwap;
@@ -12,7 +13,7 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use typeforge_common::config::RankingConfig;
-use typeforge_protocol::{PredictRequest, Prediction, PredictionSource};
+use typeforge_protocol::{PipelineTrace, PredictRequest, Prediction, PredictionSource};
 
 pub struct TypeForgeEngine {
     immutable: Arc<ArcSwap<ImmutableDictionary>>,
@@ -67,6 +68,10 @@ impl TypeForgeEngine {
                 Arc::clone(&learner),
                 ranking_config.candidate_limit,
             )))
+            .generator(Box::new(PhraseGenerator::new(
+                Arc::clone(&learner),
+                ranking_config.candidate_limit,
+            )))
             .expander(Box::new(SpellExpander::new(
                 Arc::clone(&spell_checker_arc),
                 ranking_config.candidate_limit,
@@ -75,11 +80,15 @@ impl TypeForgeEngine {
                 Arc::clone(&spell_checker_arc),
                 ranking_config.candidate_limit,
             )))
+            .expander(Box::new(SegmentationExpander::new(Arc::clone(
+                &immutable_arc,
+            ))))
             .feature(Box::new(BasicFeatureExtractor::new(
                 Arc::clone(&learner),
                 Arc::clone(&immutable_arc),
             )))
             .ranker(Box::new(WeightedRanker::new(config_arc)))
+            .postprocessor(Box::new(DiversityProcessor::new()))
             .postprocessor(Box::new(CapitalizationProcessor::new()))
             .postprocessor(Box::new(LimitProcessor::new(
                 ranking_config.candidate_limit,
@@ -119,7 +128,8 @@ impl TypeForgeEngine {
                 .as_millis() as u64,
         };
 
-        let result = self.pipeline.execute(&request);
+        let mut observer = NoopObserver;
+        let result = self.pipeline.execute(&request, &mut observer);
 
         let mut candidates: Vec<Prediction> = result
             .candidates
@@ -147,7 +157,23 @@ impl TypeForgeEngine {
 
         candidates
     }
+    pub fn explain(&self, req: &PredictRequest) -> PipelineTrace {
+        let request = PredictionRequest {
+            text_before_cursor: req.text_before_cursor.clone(),
+            text_after_cursor: req.text_after_cursor.clone(),
+            cursor_position: req.cursor_position,
+            application: req.application.clone().unwrap_or_default(),
+            language: None,
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
+        };
 
+        let mut observer = TraceObserver::new(3); // Pipeline version 3
+        self.pipeline.execute(&request, &mut observer);
+        observer.trace
+    }
     pub fn correct_spelling(&self, word: &str, limit: usize) -> Vec<Prediction> {
         let checker = self.spell_checker.read().unwrap();
         checker.correct(word, limit)

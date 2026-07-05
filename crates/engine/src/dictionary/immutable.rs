@@ -66,6 +66,27 @@ impl ImmutableDictionary {
             index: 0,
         }
     }
+
+    pub fn contains(&self, word: &str) -> bool {
+        let entries = match self.get_entries() {
+            Some(e) => e,
+            None => return false,
+        };
+
+        // Binary search since entries are sorted alphabetically?
+        // Wait, entries are not sorted alphabetically in ImmutableDictionary. They might be sorted by frequency or not sorted at all.
+        // Let's just do a linear scan or use predict to check.
+        // Actually, since I need exact match, let's just scan for now or check if prediction has it.
+        // If predict returns exact match, it contains it.
+        for entry in entries {
+            if let Some(s) = self.get_string(entry)
+                && s == word
+            {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 impl Clone for ImmutableDictionary {

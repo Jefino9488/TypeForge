@@ -28,6 +28,10 @@ pub async fn handle_client(mut stream: UnixStream, engine: Arc<TypeForgeEngine>)
                                     engine.predict(&r.prefix, &r, engine.get_candidate_limit());
                                 Response::Predict { predictions }
                             }
+                            Request::Explain(r) => {
+                                let trace = engine.explain(&r);
+                                Response::Explain { trace }
+                            }
                             Request::Learn(r) => {
                                 let accepted = r.frequency_delta > 0;
                                 // In the future, Fcitx should send `application` in LearnRequest as well

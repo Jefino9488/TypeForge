@@ -1,4 +1,5 @@
 use super::candidate::{FeatureSet, ScoredCandidate};
+use super::observer::PipelineObserver;
 use super::request::PredictionRequest;
 use super::result::{PredictionResult, PredictionTelemetry};
 use super::traits::{
@@ -17,9 +18,14 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn execute(&self, request: &PredictionRequest) -> PredictionResult {
+    pub fn execute<O: PipelineObserver>(
+        &self,
+        request: &PredictionRequest,
+        observer: &mut O,
+    ) -> PredictionResult {
         let total_start = Instant::now();
         let mut telemetry = PredictionTelemetry::default();
+        observer.on_start(request);
 
         // Stage 1: Retrieval
         let gen_start = Instant::now();
@@ -27,7 +33,9 @@ impl Pipeline {
         for generator in &self.generators {
             raw_candidates.extend(generator.generate(request));
         }
-        telemetry.generator_latency_us = gen_start.elapsed().as_micros() as u64;
+        let gen_elapsed = gen_start.elapsed().as_micros() as u64;
+        telemetry.generator_latency_us = gen_elapsed;
+        observer.on_generators_done(&raw_candidates, gen_elapsed);
 
         if request.cancelled() {
             return PredictionResult {
@@ -37,14 +45,16 @@ impl Pipeline {
         }
 
         // Stage 2: Expansion
+        let exp_start = Instant::now();
         let mut expanded_candidates = Vec::new();
         for exp in &self.expanders {
             expanded_candidates.extend(exp.expand(request, &raw_candidates));
         }
-        raw_candidates.extend(expanded_candidates);
+        raw_candidates.extend(expanded_candidates.clone());
+        let exp_elapsed = exp_start.elapsed().as_micros() as u64;
+        observer.on_expanders_done(&expanded_candidates, exp_elapsed);
 
         // Stage 3: Deduplicator
-        // For now, basic deduplication by exact text to prevent duplicate feature extraction
         let mut seen = HashSet::new();
         raw_candidates.retain(|c| seen.insert(c.text.clone()));
         telemetry.candidates_generated = raw_candidates.len();
@@ -57,19 +67,26 @@ impl Pipeline {
         }
 
         // Stage 4: Feature Extraction (Lazy)
-        let ext_start = Instant::now();
+        let _ext_start = std::time::Instant::now();
         let mut scored_candidates = Vec::with_capacity(raw_candidates.len());
-
         let ranker = self.ranker.as_ref().expect("Pipeline must have a ranker");
+
+        // We run features and ranking together
+        let mut extract_total = 0;
+        let mut rank_total = 0;
 
         for raw in raw_candidates {
             let mut features = FeatureSet::default();
+
+            let f_s = Instant::now();
             for ext in &self.extractors {
                 ext.extract(request, &raw, &mut features);
             }
+            extract_total += f_s.elapsed().as_micros() as u64;
 
-            // Stage 5: Ranking
+            let r_s = Instant::now();
             let ranking = ranker.score(request, &raw, &features);
+            rank_total += r_s.elapsed().as_micros() as u64;
 
             scored_candidates.push(ScoredCandidate {
                 candidate: raw,
@@ -77,9 +94,13 @@ impl Pipeline {
                 ranking,
             });
         }
-        telemetry.extraction_latency_us = ext_start.elapsed().as_micros() as u64; // Approximates both extraction and ranking for now
-        telemetry.ranking_latency_us = 0; // Handled sequentially inside the loop above
+
+        telemetry.extraction_latency_us = extract_total;
+        telemetry.ranking_latency_us = rank_total;
         telemetry.candidates_ranked = scored_candidates.len();
+
+        observer.on_features_done(&scored_candidates, extract_total);
+        observer.on_ranking_done(&scored_candidates, rank_total);
 
         if request.cancelled() {
             return PredictionResult {
@@ -89,11 +110,16 @@ impl Pipeline {
         }
 
         // Stage 6: Post-processing
+        let post_start = Instant::now();
         for post in &self.postprocessors {
             post.process(request, &mut scored_candidates);
         }
+        let post_elapsed = post_start.elapsed().as_micros() as u64;
+        observer.on_postprocess_done(&scored_candidates, post_elapsed);
 
-        telemetry.total_latency_us = total_start.elapsed().as_micros() as u64;
+        let total_elapsed = total_start.elapsed().as_micros() as u64;
+        telemetry.total_latency_us = total_elapsed;
+        observer.on_complete(total_elapsed);
 
         PredictionResult {
             candidates: scored_candidates,

@@ -100,6 +100,69 @@ impl CandidateGenerator for SessionGenerator {
     }
 }
 
+pub struct ContextWindow {
+    pub previous_words: smallvec::SmallVec<[String; 3]>,
+    pub current_prefix: String,
+}
+
+pub struct PhraseGenerator {
+    learner: Arc<Learner>,
+    limit: usize,
+}
+
+impl PhraseGenerator {
+    pub fn new(learner: Arc<Learner>, limit: usize) -> Self {
+        Self { learner, limit }
+    }
+}
+
+impl CandidateGenerator for PhraseGenerator {
+    fn generate(&self, request: &PredictionRequest) -> Vec<RawCandidate> {
+        let prefix = request
+            .text_before_cursor
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_lowercase();
+
+        let words: Vec<&str> = request.text_before_cursor.split_whitespace().collect();
+        let previous_words: smallvec::SmallVec<[String; 3]> = if words.len() > 1 {
+            let start = words.len().saturating_sub(4);
+            words[start..words.len() - 1]
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect()
+        } else {
+            smallvec::SmallVec::new()
+        };
+
+        let window = ContextWindow {
+            previous_words,
+            current_prefix: prefix.clone(),
+        };
+
+        if let Some(last_word) = window.previous_words.last() {
+            let ngrams = self.learner.get_ngrams(last_word, self.limit);
+
+            ngrams
+                .into_iter()
+                .filter(|word| word.starts_with(&window.current_prefix))
+                .map(|word| RawCandidate {
+                    text: word,
+                    metadata: CandidateMetadata {
+                        source: CandidateSource::Phrase,
+                        matched_prefix: window.current_prefix.clone(),
+                        edit_distance: 0,
+                        context_match: false,
+                    },
+                })
+                .collect()
+        } else {
+            vec![]
+        }
+    }
+}
+
 pub struct UserDictionaryGenerator {
     learner: Arc<Learner>,
     limit: usize,
