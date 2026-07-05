@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         config.dictionary.path.clone(),
         &l_db_path,
         &t_db_path,
-        config.ranking.clone(),
+        config.general.candidate_limit,
     )?);
     engine.set_learning_enabled(config.general.learning);
 

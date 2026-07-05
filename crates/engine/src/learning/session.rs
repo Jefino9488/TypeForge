@@ -36,9 +36,4 @@ impl SessionMemory {
         let words = self.recent_words.read().unwrap();
         words.contains(&word.to_string())
     }
-
-    pub fn get_recent(&self, limit: usize) -> Vec<String> {
-        let words = self.recent_words.read().unwrap();
-        words.iter().take(limit).cloned().collect()
-    }
 }
